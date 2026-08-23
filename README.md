@@ -58,4 +58,5 @@ this on a timer should treat a non-zero exit as worth looking at.
 
 ```shell
 go build ./... && go vet ./... && go test ./... -race -cover
+go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 ```
