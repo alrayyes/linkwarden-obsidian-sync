@@ -1,5 +1,10 @@
 # linkwarden-obsidian-sync
 
+[![ci](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml/badge.svg)](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/alrayyes/linkwarden-obsidian-sync)](https://github.com/alrayyes/linkwarden-obsidian-sync/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/alrayyes/linkwarden-obsidian-sync.svg)](https://pkg.go.dev/github.com/alrayyes/linkwarden-obsidian-sync)
+[![license](https://img.shields.io/github/license/alrayyes/linkwarden-obsidian-sync)](LICENSE)
+
 Copies newly saved [Linkwarden](https://linkwarden.app) links into an Obsidian
 vault as notes, then pushes them to a dated branch for review. No LLM in the
 loop — everything here is a deterministic API call, file write and git
@@ -43,6 +48,10 @@ configured (the same clone you use interactively is fine) — this tool shells
 out to the `git` on `PATH`, it doesn't carry its own.
 
 ## Running it
+
+Grab a prebuilt binary from the [latest
+release](https://github.com/alrayyes/linkwarden-obsidian-sync/releases/latest)
+(linux/darwin, amd64/arm64), or build it yourself:
 
 ```shell
 go build -o linkwarden-obsidian-sync .
