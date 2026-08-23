@@ -15,7 +15,13 @@ import (
 	"time"
 )
 
+// version is set at build time via goreleaser's -X main.version ldflag,
+// off the tag release-please creates. Unset in a `go build` or `go run`.
+var version = "dev"
+
 func main() {
+	log.Printf("linkwarden-obsidian-sync %s", version)
+
 	cfg, err := loadConfig()
 	if err != nil {
 		log.Fatalf("config: %v", err)
