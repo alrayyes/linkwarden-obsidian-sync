@@ -106,7 +106,7 @@ func (c *Client) fetchPage(cursor int) ([]Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("linkwarden returned %s for %s", resp.Status, url)
