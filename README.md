@@ -106,3 +106,6 @@ this on a timer should treat a non-zero exit as worth looking at.
 go build ./... && go vet ./... && go test ./... -race -cover
 go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for testing against a real
+Linkwarden instance via `compose.yaml`.

@@ -15,11 +15,6 @@ import (
 // every run.
 const sortDateNewestFirst = 0
 
-// PageSize matches Linkwarden's own default PAGINATION_TAKE_COUNT. The API
-// doesn't report it back, so a page shorter than this is the signal we've
-// reached the end.
-const PageSize = 50
-
 // errUnexpectedStatus is returned when Linkwarden's HTTP response status
 // isn't 200 OK.
 var errUnexpectedStatus = errors.New("unexpected status from linkwarden")
@@ -49,10 +44,21 @@ type Collection struct {
 	Name string `json:"name"`
 }
 
+// searchData mirrors Linkwarden's own SearchResponse shape: the links live
+// under data.links, and data.nextCursor — the ID of the last link on this
+// page, or nil once a page comes back shorter than the server's own page
+// size — is what a caller echoes back as the next request's cursor. It is
+// not a numeric offset; Linkwarden's server does Prisma cursor pagination
+// (`cursor: { id: <nextCursor> }, skip: 1`), keyed on a real link ID.
+type searchData struct {
+	Links      []Link `json:"links"`
+	NextCursor *int   `json:"nextCursor"`
+}
+
 type searchResponse struct {
-	Data    []Link `json:"data"`
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Data    searchData `json:"data"`
+	Success bool       `json:"success"`
+	Message string     `json:"message"`
 }
 
 // Client is a Linkwarden API client, scoped to one base URL and access token.
@@ -80,10 +86,10 @@ func NewClient(baseURL, token string) *Client {
 // in the vault in the order they were actually saved.
 func (c *Client) FetchNewLinks(since time.Time, seenAtSince map[int]bool) ([]Link, error) {
 	var fresh []Link
-	cursor := 0
+	var cursor *int
 
 	for {
-		page, err := c.fetchPage(cursor)
+		page, nextCursor, err := c.fetchPage(cursor)
 		if err != nil {
 			return nil, err
 		}
@@ -93,10 +99,10 @@ func (c *Client) FetchNewLinks(since time.Time, seenAtSince map[int]bool) ([]Lin
 
 		var stop bool
 		fresh, stop = appendFresh(fresh, page, since, seenAtSince)
-		if stop || len(page) < PageSize {
+		if stop || nextCursor == nil {
 			return fresh, nil
 		}
-		cursor += PageSize
+		cursor = nextCursor
 	}
 }
 
@@ -118,34 +124,39 @@ func appendFresh(fresh, page []Link, since time.Time, seenAtSince map[int]bool) 
 	return fresh, false
 }
 
-func (c *Client) fetchPage(cursor int) ([]Link, error) {
-	url := fmt.Sprintf("%s/api/v1/search?sort=%d&cursor=%d", c.baseURL, sortDateNewestFirst, cursor)
+// fetchPage requests one page, starting after cursor (the previous page's
+// nextCursor), or from the beginning when cursor is nil.
+func (c *Client) fetchPage(cursor *int) ([]Link, *int, error) {
+	url := fmt.Sprintf("%s/api/v1/search?sort=%d", c.baseURL, sortDateNewestFirst)
+	if cursor != nil {
+		url += fmt.Sprintf("&cursor=%d", *cursor)
+	}
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("building request for %s: %w", url, err)
+		return nil, nil, fmt.Errorf("building request for %s: %w", url, err)
 	}
 	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("requesting %s: %w", url, err)
+		return nil, nil, fmt.Errorf("requesting %s: %w", url, err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%w: %s for %s", errUnexpectedStatus, resp.Status, url)
+		return nil, nil, fmt.Errorf("%w: %s for %s", errUnexpectedStatus, resp.Status, url)
 	}
 
 	var parsed searchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, fmt.Errorf("decoding linkwarden response: %w", err)
+		return nil, nil, fmt.Errorf("decoding linkwarden response: %w", err)
 	}
 	if !parsed.Success {
-		return nil, fmt.Errorf("%w: %s", errLinkwardenFailure, parsed.Message)
+		return nil, nil, fmt.Errorf("%w: %s", errLinkwardenFailure, parsed.Message)
 	}
 
-	return parsed.Data, nil
+	return parsed.Data.Links, parsed.Data.NextCursor, nil
 }
