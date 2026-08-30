@@ -27,13 +27,14 @@ func Slugify(name string, id int) string {
 	if len(cleaned) > 120 {
 		cleaned = strings.TrimSpace(cleaned[:120])
 	}
+
 	return cleaned
 }
 
-// NoteMarkdown renders a link as an Obsidian note: YAML frontmatter the vault
+// Markdown renders a link as an Obsidian note: YAML frontmatter the vault
 // can query on (url, tags, collection, created), then the description as the
 // body so the note reads as something rather than bare metadata.
-func NoteMarkdown(l linkwarden.Link) string {
+func Markdown(l linkwarden.Link) string {
 	var b strings.Builder
 
 	b.WriteString("---\n")
@@ -72,6 +73,7 @@ func NoteMarkdown(l linkwarden.Link) string {
 func yamlQuote(s string) string {
 	s = strings.ReplaceAll(s, `\`, `\\`)
 	s = strings.ReplaceAll(s, `"`, `\"`)
+
 	return `"` + s + `"`
 }
 
@@ -79,7 +81,7 @@ func yamlQuote(s string) string {
 // slug already exists — a rerun after a partial failure shouldn't overwrite a
 // note a human may have started editing.
 func WriteNote(dir string, l linkwarden.Link) (written bool, path string, err error) {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return false, "", fmt.Errorf("creating %s: %w", dir, err)
 	}
 
@@ -89,11 +91,12 @@ func WriteNote(dir string, l linkwarden.Link) (written bool, path string, err er
 	if _, err := os.Stat(path); err == nil {
 		return false, path, nil
 	} else if !os.IsNotExist(err) {
-		return false, "", err
+		return false, "", fmt.Errorf("checking %s: %w", path, err)
 	}
 
-	if err := os.WriteFile(path, []byte(NoteMarkdown(l)), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(Markdown(l)), 0o600); err != nil {
 		return false, "", fmt.Errorf("writing %s: %w", path, err)
 	}
+
 	return true, path, nil
 }

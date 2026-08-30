@@ -6,10 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/linkwarden"
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/note"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSlugify(t *testing.T) {
@@ -50,7 +49,7 @@ func TestNoteMarkdown(t *testing.T) {
 			CreatedAt:   time.Date(2026, 8, 23, 0, 0, 0, 0, time.UTC),
 		}
 
-		got := note.NoteMarkdown(l)
+		got := note.Markdown(l)
 
 		for _, want := range []string{
 			`url: "https://example.com/a?b=c"`,
@@ -71,7 +70,7 @@ func TestNoteMarkdown(t *testing.T) {
 		t.Parallel()
 
 		l := linkwarden.Link{ID: 2, Name: "No tags", URL: "https://example.com", CreatedAt: time.Now()}
-		require.Contains(t, note.NoteMarkdown(l), "tags: []")
+		require.Contains(t, note.Markdown(l), "tags: []")
 	})
 }
 
@@ -85,18 +84,18 @@ func TestWriteNoteSkipsExisting(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, written, "first call should write the note")
 
-	original, err := os.ReadFile(path)
+	original, err := os.ReadFile(path) //nolint:gosec // path is this test's own t.TempDir() fixture, not user input
 	require.NoError(t, err)
 
 	// Simulate a human having started editing the note before a rerun.
 	edited := string(original) + "\nmy own notes\n"
-	require.NoError(t, os.WriteFile(path, []byte(edited), 0o644))
+	require.NoError(t, os.WriteFile(path, []byte(edited), 0o600)) //nolint:gosec // path is this test's own t.TempDir() fixture, not user input
 
 	written, _, err = note.WriteNote(dir, l)
 	require.NoError(t, err)
 	require.False(t, written, "second call must not overwrite an existing note")
 
-	after, err := os.ReadFile(path)
+	after, err := os.ReadFile(path) //nolint:gosec // path is this test's own t.TempDir() fixture, not user input
 	require.NoError(t, err)
 	require.Equal(t, edited, string(after))
 }

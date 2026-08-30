@@ -3,6 +3,7 @@ package state
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -21,39 +22,52 @@ type SyncState struct {
 	SeenAtLast   []int     `json:"seenAtLast"`
 }
 
+// Load reads the sync marker from path. A missing file is not an error — it
+// means no sync has happened yet — and returns the zero SyncState.
 func Load(path string) (SyncState, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // path is the operator-configured state file location, not attacker input
 	if os.IsNotExist(err) {
 		return SyncState{}, nil
 	}
 	if err != nil {
-		return SyncState{}, err
+		return SyncState{}, fmt.Errorf("reading %s: %w", path, err)
 	}
 
 	var s SyncState
 	if err := json.Unmarshal(data, &s); err != nil {
-		return SyncState{}, err
+		return SyncState{}, fmt.Errorf("parsing %s: %w", path, err)
 	}
+
 	return s, nil
 }
 
+// Save writes the sync marker to path, creating its parent directory if
+// needed.
 func Save(path string, s SyncState) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+		return fmt.Errorf("creating %s: %w", filepath.Dir(path), err)
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshaling state: %w", err)
 	}
-	return os.WriteFile(path, data, 0o644)
+
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		return fmt.Errorf("writing %s: %w", path, err)
+	}
+
+	return nil
 }
 
+// SeenAtLastSet returns SeenAtLast as a set, for an O(1) membership check
+// against a link's ID at the exact-timestamp boundary.
 func (s SyncState) SeenAtLastSet() map[int]bool {
 	set := make(map[int]bool, len(s.SeenAtLast))
 	for _, id := range s.SeenAtLast {
 		set[id] = true
 	}
+
 	return set
 }
 

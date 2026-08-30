@@ -13,11 +13,21 @@
 ## Running tests
 
 ```shell
-go build ./... && go vet ./... && gofmt -l . && go test ./... -race -cover
+go build ./... && go vet ./... && gofmt -l . && go mod tidy -diff && go test ./... -race -cover
 ```
 
 `gofmt -l .` should print nothing; a non-empty result means a file isn't
-formatted. CI runs the same four commands.
+formatted. `go mod tidy -diff` should print nothing too; a non-empty result
+means `go.mod`/`go.sum` have drifted from what `go mod tidy` would produce.
+
+Lint with golangci-lint, configured in `.golangci.yml`:
+
+```shell
+golangci-lint run ./...
+```
+
+CI runs the same checks, plus `govulncheck` for known CVEs in pinned
+dependencies.
 
 ## Adding a change
 

@@ -7,10 +7,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/linkwarden"
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/note"
@@ -22,6 +24,13 @@ import (
 // off the tag release-please creates. Unset in a `go build` or `go run`.
 var version = "dev"
 
+// errLinkwardenURLNotSet and errLinkwardenTokenNotSet are the two config
+// errors loadConfig can return.
+var (
+	errLinkwardenURLNotSet   = errors.New("LINKWARDEN_URL is not set (e.g. https://linkwarden.example.com, no trailing slash)")
+	errLinkwardenTokenNotSet = errors.New("LINKWARDEN_TOKEN is not set (Linkwarden → Settings → Access Tokens)")
+)
+
 func main() {
 	log.Printf("linkwarden-obsidian-sync %s", version)
 
@@ -30,31 +39,67 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
+	if err := run(cfg); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// run does the actual sync: read state, fetch what's new, write notes, save
+// state, then push. Split out of main so the top level stays a thin
+// parse-config-and-report-the-error shell.
+func run(cfg config) error {
 	statePath := filepath.Join(cfg.stateDir, "last-synced.json")
 	st, err := state.Load(statePath)
 	if err != nil {
-		log.Fatalf("reading state at %s: %v", statePath, err)
+		return fmt.Errorf("reading state at %s: %w", statePath, err)
 	}
 
 	client := linkwarden.NewClient(cfg.linkwardenURL, cfg.linkwardenToken)
 	freshNewestFirst, err := client.FetchNewLinks(st.LastSyncedAt, st.SeenAtLastSet())
 	if err != nil {
-		log.Fatalf("fetching links: %v", err)
+		return fmt.Errorf("fetching links: %w", err)
 	}
 
 	if len(freshNewestFirst) == 0 {
 		log.Println("nothing new since last sync")
-		return
+
+		return nil
 	}
 
 	notesDir := filepath.Join(cfg.vaultPath, cfg.vaultSubdir)
+	written, err := writeNotes(notesDir, freshNewestFirst)
+	if err != nil {
+		return err
+	}
 
+	if err := state.Save(statePath, state.Next(st, freshNewestFirst)); err != nil {
+		return fmt.Errorf("saving state to %s: %w", statePath, err)
+	}
+
+	if written == 0 {
+		log.Println("no new notes written (all already existed)")
+
+		return nil
+	}
+
+	if cfg.skipGit {
+		log.Printf("wrote %d note(s), skipping git (LINKWARDEN_SYNC_SKIP_GIT set)", written)
+
+		return nil
+	}
+
+	return pushToVault(cfg, written)
+}
+
+// writeNotes writes freshNewestFirst into notesDir in the order they were
+// actually saved (oldest first), so a partial failure leaves the notes
+// already on disk in a sensible sequence.
+func writeNotes(notesDir string, freshNewestFirst []linkwarden.Link) (int, error) {
 	written := 0
-	for i := len(freshNewestFirst) - 1; i >= 0; i-- {
-		l := freshNewestFirst[i]
+	for _, l := range slices.Backward(freshNewestFirst) {
 		ok, path, err := note.WriteNote(notesDir, l)
 		if err != nil {
-			log.Fatalf("writing note for link %d: %v", l.ID, err)
+			return written, fmt.Errorf("writing note for link %d: %w", l.ID, err)
 		}
 		if ok {
 			written++
@@ -64,32 +109,26 @@ func main() {
 		}
 	}
 
-	newState := state.Next(st, freshNewestFirst)
-	if err := state.Save(statePath, newState); err != nil {
-		log.Fatalf("saving state to %s: %v", statePath, err)
-	}
+	return written, nil
+}
 
-	if written == 0 {
-		log.Println("no new notes written (all already existed)")
-		return
-	}
-
-	if cfg.skipGit {
-		log.Printf("wrote %d note(s), skipping git (LINKWARDEN_SYNC_SKIP_GIT set)", written)
-		return
-	}
-
+// pushToVault commits the newly written notes and pushes them to a dated
+// branch, reporting where to open the review pull request.
+func pushToVault(cfg config, written int) error {
 	branch, err := vault.CommitAndPush(cfg.vaultPath, cfg.vaultSubdir, written)
 	if err != nil {
-		log.Fatalf("git: %v", err)
+		return fmt.Errorf("git: %w", err)
 	}
 	if branch == "" {
 		log.Println("wrote notes but git reported no changes to commit")
-		return
+
+		return nil
 	}
 
 	fmt.Printf("wrote %d note(s) on branch %s\n", written, branch)
 	fmt.Printf("open a pull request: https://git.higherlearning.eu/alrayyes/obsidian/compare/main...%s\n", branch)
+
+	return nil
 }
 
 type config struct {
@@ -111,12 +150,12 @@ func loadConfig() (config, error) {
 
 	c.linkwardenURL = os.Getenv("LINKWARDEN_URL")
 	if c.linkwardenURL == "" {
-		return config{}, fmt.Errorf("LINKWARDEN_URL is not set (e.g. https://linkwarden.example.com, no trailing slash)")
+		return config{}, errLinkwardenURLNotSet
 	}
 
 	c.linkwardenToken = os.Getenv("LINKWARDEN_TOKEN")
 	if c.linkwardenToken == "" {
-		return config{}, fmt.Errorf("LINKWARDEN_TOKEN is not set (Linkwarden → Settings → Access Tokens)")
+		return config{}, errLinkwardenTokenNotSet
 	}
 
 	return c, nil
@@ -126,5 +165,6 @@ func getenvDefault(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
+
 	return fallback
 }
