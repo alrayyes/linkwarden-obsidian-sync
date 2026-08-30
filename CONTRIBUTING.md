@@ -1,7 +1,10 @@
 # Contributing
 
-- `cmd/linkwarden-obsidian-sync/main.go` — the composition root: wiring,
-  config, and the top-level sync loop.
+- `cmd/linkwarden-obsidian-sync/main.go` — the composition root: the cobra
+  command tree (`init`, and the root command's sync) and the top-level sync
+  loop.
+- `internal/config` — loading and validating the TOML config file, its
+  environment-variable overrides, and writing `init`'s template.
 - `internal/linkwarden` — the Linkwarden API client and pagination/stop
   logic.
 - `internal/note` — turning a link into a markdown note, and writing it
