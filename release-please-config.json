@@ -3,7 +3,8 @@
   "packages": {
     ".": {
       "release-type": "go",
-      "package-name": "linkwarden-obsidian-sync"
+      "package-name": "linkwarden-obsidian-sync",
+      "include-component-in-tag": false
     }
   }
 }
