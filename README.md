@@ -42,7 +42,11 @@ linkwarden-obsidian-sync init
 
 which writes a commented template — including every default — to the
 resolved path and refuses to overwrite an existing file unless you pass
-`--force`. Fill in the two required values and you're done:
+`--force`. Running the bare command with nothing configured yet offers to
+do the same thing on the spot — answer yes, or pass `--yes` up front to
+skip asking; with no terminal to ask on (a script, a systemd unit), it
+skips the prompt and fails with the same error `init` points you at.
+Fill in the two required values and you're done:
 
 ```toml
 linkwarden_url = "https://linkwarden.example.com"

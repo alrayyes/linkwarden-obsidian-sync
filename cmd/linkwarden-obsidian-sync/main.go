@@ -7,10 +7,14 @@
 package main
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/config"
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/linkwarden"
@@ -18,6 +22,16 @@ import (
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/state"
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/vault"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
+)
+
+// linkwardenURLEnv and linkwardenTokenEnv are the two environment
+// variables internal/config binds linkwarden_url/linkwarden_token to.
+// Named here, not imported from internal/config, so that package doesn't
+// need to export its env-binding names just for this first-run check.
+const (
+	linkwardenURLEnv   = "LINKWARDEN_URL"
+	linkwardenTokenEnv = "LINKWARDEN_TOKEN"
 )
 
 // version is set at build time via goreleaser's -X main.version ldflag,
@@ -52,6 +66,7 @@ func newRootCmd() *cobra.Command {
 	}
 	root.PersistentFlags().String("config", "", "path to config file (default $XDG_CONFIG_HOME/linkwarden-obsidian-sync/config.toml)")
 	root.Flags().Bool("skip-git", false, "write notes but skip the git commit/push step")
+	root.Flags().BoolP("yes", "y", false, "on a first, unconfigured run, write a template config file without prompting")
 
 	root.AddCommand(newInitCmd())
 
@@ -84,10 +99,12 @@ func newInitCmd() *cobra.Command {
 // runSync loads config and runs the actual sync: read state, fetch what's
 // new, write notes, save state, then push.
 func runSync(cmd *cobra.Command) error {
-	configPath, _ := cmd.Flags().GetString("config")
-	cfg, err := config.Load(configPath)
+	cfg, ranInit, err := loadConfigOrOfferInit(cmd)
 	if err != nil {
-		return fmt.Errorf("config: %w", err)
+		return err
+	}
+	if ranInit {
+		return nil
 	}
 	if cmd.Flags().Changed("skip-git") {
 		cfg.SkipGit, _ = cmd.Flags().GetBool("skip-git")
@@ -134,6 +151,84 @@ func runSync(cmd *cobra.Command) error {
 	}
 
 	return pushToVault(cfg, written)
+}
+
+// loadConfigOrOfferInit loads the config, offering to write a template on
+// a genuinely unconfigured run instead of just erroring (see offerInit).
+// ranInit reports whether a template was written, in which case the
+// caller should stop rather than try to sync with placeholder credentials.
+func loadConfigOrOfferInit(cmd *cobra.Command) (config.Config, bool, error) {
+	configPath, _ := cmd.Flags().GetString("config")
+	loaded, loadErr := config.Load(configPath)
+	if loadErr == nil {
+		return loaded, false, nil
+	}
+	if !errors.Is(loadErr, config.ErrMissingRequired) {
+		return config.Config{}, false, fmt.Errorf("config: %w", loadErr)
+	}
+
+	wrote, promptErr := offerInit(cmd, configPath)
+	if promptErr != nil {
+		return config.Config{}, false, fmt.Errorf("config: %w", promptErr)
+	}
+	if wrote {
+		return config.Config{}, true, nil
+	}
+
+	return config.Config{}, false, fmt.Errorf("config: %w", loadErr)
+}
+
+// offerInit offers to write a template config file when the run is
+// genuinely unconfigured — no config file at the resolved path, and
+// neither LINKWARDEN_URL nor LINKWARDEN_TOKEN set — rather than leaving
+// someone with nothing but a "missing required settings" error and no
+// path forward. It reports whether it wrote a template, in which case the
+// caller should stop: there's nothing left to sync with placeholder
+// credentials.
+//
+// A config file that already exists (just missing a key, say) or an
+// env var already set means someone has already tried to configure this,
+// wrongly — that gets the plain error, not a wizard.
+func offerInit(cmd *cobra.Command, configPath string) (wrote bool, err error) {
+	resolved, err := config.ResolvePath(configPath)
+	if err != nil {
+		return false, fmt.Errorf("resolving config path: %w", err)
+	}
+	if _, statErr := os.Stat(resolved); statErr == nil {
+		return false, nil
+	}
+	if os.Getenv(linkwardenURLEnv) != "" || os.Getenv(linkwardenTokenEnv) != "" {
+		return false, nil
+	}
+
+	yes, _ := cmd.Flags().GetBool("yes")
+	if !yes {
+		if !isTerminal(os.Stdin) || !isTerminal(os.Stdout) {
+			fmt.Fprintf(os.Stderr, "no config found at %s and no %s/%s set; run `linkwarden-obsidian-sync init` to get started\n",
+				resolved, linkwardenURLEnv, linkwardenTokenEnv)
+
+			return false, nil
+		}
+
+		fmt.Printf("No config found at %s. Write a template now? [y/N] ", resolved)
+		answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		if !strings.HasPrefix(strings.ToLower(strings.TrimSpace(answer)), "y") {
+			return false, nil
+		}
+	}
+
+	written, err := config.WriteTemplate(resolved, false)
+	if err != nil {
+		return false, fmt.Errorf("writing template: %w", err)
+	}
+	fmt.Printf("wrote %s\n", written)
+	fmt.Println("edit it to set linkwarden_url and linkwarden_token, then run linkwarden-obsidian-sync again")
+
+	return true, nil
+}
+
+func isTerminal(f *os.File) bool {
+	return term.IsTerminal(int(f.Fd()))
 }
 
 // writeNotes writes freshNewestFirst into notesDir in the order they were

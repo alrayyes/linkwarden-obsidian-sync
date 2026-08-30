@@ -27,12 +27,12 @@ type Config struct {
 	SkipGit         bool   `mapstructure:"skip_git"`
 }
 
-// errMissingRequired is wrapped with the actual comma-joined field names
+// ErrMissingRequired is wrapped with the actual comma-joined field names
 // rather than building a one-off dynamic error, so callers can match on it
 // with errors.Is if they ever need to. errConfigExists is likewise wrapped
 // with the actual path in WriteTemplate.
 var (
-	errMissingRequired = errors.New("config: missing required settings")
+	ErrMissingRequired = errors.New("config: missing required settings")
 	errConfigExists    = errors.New("config file already exists (pass --force to overwrite)")
 )
 
@@ -110,10 +110,27 @@ func (c Config) validate() error {
 		missing = append(missing, "linkwarden_token (LINKWARDEN_TOKEN)")
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("%w: %s", errMissingRequired, strings.Join(missing, ", "))
+		return fmt.Errorf("%w: %s", ErrMissingRequired, strings.Join(missing, ", "))
 	}
 
 	return nil
+}
+
+// ResolvePath returns the config file path this tool reads from or writes
+// to: path itself if non-empty, otherwise the XDG default
+// ($XDG_CONFIG_HOME/linkwarden-obsidian-sync/config.toml, falling back to
+// ~/.config/linkwarden-obsidian-sync/config.toml).
+func ResolvePath(path string) (string, error) {
+	if path != "" {
+		return path, nil
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("resolving home directory: %w", err)
+	}
+
+	return filepath.Join(xdgDir("XDG_CONFIG_HOME", home, ".config"), "linkwarden-obsidian-sync", "config.toml"), nil
 }
 
 // xdgDir resolves an XDG base-directory variable per spec: an unset or
@@ -134,12 +151,9 @@ var configTemplate string
 // path is empty, to the default XDG location. It refuses to overwrite an
 // existing file unless force is true, and returns the path it wrote to.
 func WriteTemplate(path string, force bool) (string, error) {
-	if path == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("resolving home directory: %w", err)
-		}
-		path = filepath.Join(xdgDir("XDG_CONFIG_HOME", home, ".config"), "linkwarden-obsidian-sync", "config.toml")
+	path, err := ResolvePath(path)
+	if err != nil {
+		return "", err
 	}
 
 	if !force {

@@ -214,4 +214,35 @@ func TestLoadNoConfigFileAnywhereAndNoEnvIsAnError(t *testing.T) {
 
 	_, err := config.Load("")
 	require.Error(t, err)
+	require.ErrorIs(t, err, config.ErrMissingRequired)
+}
+
+func TestResolvePathExplicit(t *testing.T) {
+	got, err := config.ResolvePath("/explicit/config.toml")
+	require.NoError(t, err)
+	require.Equal(t, "/explicit/config.toml", got)
+}
+
+func TestResolvePathDefaultXDGPath(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CONFIG_HOME", "")
+
+	got, err := config.ResolvePath("")
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(home, ".config", "linkwarden-obsidian-sync", "config.toml"), got)
+}
+
+func TestResolvePathXDGConfigHomeOverride(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", "/custom-config")
+
+	got, err := config.ResolvePath("")
+	require.NoError(t, err)
+	require.Equal(t, "/custom-config/linkwarden-obsidian-sync/config.toml", got)
+}
+
+func TestLoadExplicitPathMissingFileErrorIsNotErrMissingRequired(t *testing.T) {
+	_, err := config.Load(filepath.Join(t.TempDir(), "does-not-exist.toml"))
+	require.Error(t, err)
+	require.NotErrorIs(t, err, config.ErrMissingRequired, "a missing explicit --config file is a different failure than missing required settings")
 }
