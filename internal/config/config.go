@@ -24,7 +24,6 @@ type Config struct {
 	VaultPath       string `mapstructure:"vault_path"`
 	VaultSubdir     string `mapstructure:"vault_subdir"`
 	StateDir        string `mapstructure:"state_dir"`
-	SkipGit         bool   `mapstructure:"skip_git"`
 }
 
 // ErrMissingRequired is wrapped with the actual comma-joined field names
@@ -46,7 +45,6 @@ var envBindings = map[string]string{
 	"vault_path":       "VAULT_PATH",
 	"vault_subdir":     "VAULT_SUBDIR",
 	"state_dir":        "LINKWARDEN_SYNC_STATE_DIR",
-	"skip_git":         "LINKWARDEN_SYNC_SKIP_GIT",
 }
 
 // Load reads configuration from the TOML file at path, or, if path is

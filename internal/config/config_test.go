@@ -25,7 +25,6 @@ linkwarden_token = "file-token"
 vault_path = "/vault"
 vault_subdir = "Links"
 state_dir = "/state"
-skip_git = true
 `)
 
 	cfg, err := config.Load(path)
@@ -35,7 +34,6 @@ skip_git = true
 	require.Equal(t, "/vault", cfg.VaultPath)
 	require.Equal(t, "Links", cfg.VaultSubdir)
 	require.Equal(t, "/state", cfg.StateDir)
-	require.True(t, cfg.SkipGit)
 }
 
 func TestLoadExplicitPathMissingFileIsAnError(t *testing.T) {
@@ -57,7 +55,6 @@ linkwarden_token = "file-token"
 	require.Equal(t, filepath.Join(dir, "Documents", "obsidian"), cfg.VaultPath)
 	require.Equal(t, "Linkwarden", cfg.VaultSubdir)
 	require.Equal(t, filepath.Join(dir, ".local", "state", "linkwarden-obsidian-sync"), cfg.StateDir)
-	require.False(t, cfg.SkipGit)
 }
 
 func TestLoadStateDirRespectsXDGStateHome(t *testing.T) {
@@ -113,19 +110,6 @@ func TestLoadEnvVarsAloneAreEnough(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "https://from-env.example.com", cfg.LinkwardenURL)
 	require.Equal(t, "env-token", cfg.LinkwardenToken)
-}
-
-func TestLoadSkipGitEnvVar(t *testing.T) {
-	dir := t.TempDir()
-	path := writeConfigFile(t, dir, `
-linkwarden_url = "https://linkwarden.example.com"
-linkwarden_token = "file-token"
-`)
-	t.Setenv("LINKWARDEN_SYNC_SKIP_GIT", "true")
-
-	cfg, err := config.Load(path)
-	require.NoError(t, err)
-	require.True(t, cfg.SkipGit)
 }
 
 func TestLoadDefaultXDGPath(t *testing.T) {

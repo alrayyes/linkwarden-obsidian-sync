@@ -13,7 +13,7 @@ linkwarden_url = ""
 # Env: LINKWARDEN_TOKEN
 linkwarden_token = ""
 
-# Path to your Obsidian vault's git checkout.
+# Path to your Obsidian vault (or wherever the notes should live).
 # Env: VAULT_PATH
 # Default: ~/Documents/obsidian
 # vault_path = ""
@@ -23,13 +23,8 @@ linkwarden_token = ""
 # Default: Linkwarden
 # vault_subdir = ""
 
-# Where the last-synced marker is kept.
+# Where the known-links marker is kept.
 # Env: LINKWARDEN_SYNC_STATE_DIR
 # Default: $XDG_STATE_HOME/linkwarden-obsidian-sync
 # (~/.local/state/linkwarden-obsidian-sync if $XDG_STATE_HOME is unset)
 # state_dir = ""
-
-# Write notes but skip the git commit/push step.
-# Env: LINKWARDEN_SYNC_SKIP_GIT
-# Default: false
-# skip_git = false
