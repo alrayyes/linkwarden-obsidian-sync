@@ -1,9 +1,11 @@
-// Command linkwarden-obsidian-sync copies newly saved Linkwarden links into
-// an Obsidian vault as notes, then pushes them to a dated branch for review.
+// Command linkwarden-obsidian-sync keeps a directory of Obsidian notes in
+// sync with your saved Linkwarden links: one note per link, added,
+// updated or removed to match Linkwarden's current state exactly.
 //
 // It's meant to run periodically and unattended (a systemd --user timer),
-// with no LLM in the loop: everything it does is a deterministic API call,
-// file write and git command.
+// with no LLM in the loop: everything it does is a deterministic API call
+// and a file write. It doesn't touch git — reviewing and committing
+// whatever changed is the operator's own workflow from here.
 package main
 
 import (
@@ -13,14 +15,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/config"
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/linkwarden"
-	"github.com/alrayyes/linkwarden-obsidian-sync/internal/note"
+	"github.com/alrayyes/linkwarden-obsidian-sync/internal/reconcile"
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/state"
-	"github.com/alrayyes/linkwarden-obsidian-sync/internal/vault"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -50,7 +50,7 @@ func main() {
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "linkwarden-obsidian-sync",
-		Short: "Copy newly saved Linkwarden links into an Obsidian vault as notes",
+		Short: "Keep a directory of Obsidian notes in sync with your saved Linkwarden links",
 		// This tool's own errors are already formatted for a human to read
 		// (log.Fatal-shaped, from run's own wrapping); cobra's usage dump on
 		// every runtime failure would bury that under noise meant for a
@@ -65,7 +65,6 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 	root.PersistentFlags().String("config", "", "path to config file (default $XDG_CONFIG_HOME/linkwarden-obsidian-sync/config.toml)")
-	root.Flags().Bool("skip-git", false, "write notes but skip the git commit/push step")
 	root.Flags().BoolP("yes", "y", false, "on a first, unconfigured run, write a template config file without prompting")
 
 	root.AddCommand(newInitCmd())
@@ -96,8 +95,11 @@ func newInitCmd() *cobra.Command {
 	return initCmd
 }
 
-// runSync loads config and runs the actual sync: read state, fetch what's
-// new, write notes, save state, then push.
+// runSync loads config, fetches every link Linkwarden currently has, and
+// reconciles the vault's notes to match — adding, updating and removing
+// files as needed. State only advances once reconciliation actually
+// succeeds: a failure partway through leaves it untouched, so a retry
+// re-processes the same links instead of silently treating them as done.
 func runSync(cmd *cobra.Command) error {
 	cfg, ranInit, err := loadConfigOrOfferInit(cmd)
 	if err != nil {
@@ -106,51 +108,36 @@ func runSync(cmd *cobra.Command) error {
 	if ranInit {
 		return nil
 	}
-	if cmd.Flags().Changed("skip-git") {
-		cfg.SkipGit, _ = cmd.Flags().GetBool("skip-git")
-	}
 
 	statePath := filepath.Join(cfg.StateDir, "last-synced.json")
-	st, err := state.Load(statePath)
+	prevState, err := state.Load(statePath)
 	if err != nil {
 		return fmt.Errorf("reading state at %s: %w", statePath, err)
 	}
 
 	client := linkwarden.NewClient(cfg.LinkwardenURL, cfg.LinkwardenToken)
-	freshNewestFirst, err := client.FetchNewLinks(st.LastSyncedAt, st.SeenAtLastSet())
+	links, err := client.FetchAllLinks()
 	if err != nil {
 		return fmt.Errorf("fetching links: %w", err)
 	}
 
-	if len(freshNewestFirst) == 0 {
-		log.Println("nothing new since last sync")
-
-		return nil
-	}
-
 	notesDir := filepath.Join(cfg.VaultPath, cfg.VaultSubdir)
-	written, err := writeNotes(notesDir, freshNewestFirst)
+	newState, result, err := reconcile.Notes(notesDir, links, prevState)
 	if err != nil {
-		return err
+		return fmt.Errorf("reconciling notes: %w", err)
 	}
 
-	if err := state.Save(statePath, state.Next(st, freshNewestFirst)); err != nil {
+	if err := state.Save(statePath, newState); err != nil {
 		return fmt.Errorf("saving state to %s: %w", statePath, err)
 	}
 
-	if written == 0 {
-		log.Println("no new notes written (all already existed)")
-
-		return nil
+	if result == (reconcile.Result{}) {
+		log.Println("nothing changed")
+	} else {
+		log.Printf("synced %d link(s): %d added, %d updated, %d removed", len(links), result.Added, result.Updated, result.Removed)
 	}
 
-	if cfg.SkipGit {
-		log.Printf("wrote %d note(s), skipping git (--skip-git set)", written)
-
-		return nil
-	}
-
-	return pushToVault(cfg, written)
+	return nil
 }
 
 // loadConfigOrOfferInit loads the config, offering to write a template on
@@ -229,44 +216,4 @@ func offerInit(cmd *cobra.Command, configPath string) (wrote bool, err error) {
 
 func isTerminal(f *os.File) bool {
 	return term.IsTerminal(int(f.Fd()))
-}
-
-// writeNotes writes freshNewestFirst into notesDir in the order they were
-// actually saved (oldest first), so a partial failure leaves the notes
-// already on disk in a sensible sequence.
-func writeNotes(notesDir string, freshNewestFirst []linkwarden.Link) (int, error) {
-	written := 0
-	for _, l := range slices.Backward(freshNewestFirst) {
-		ok, path, err := note.WriteNote(notesDir, l)
-		if err != nil {
-			return written, fmt.Errorf("writing note for link %d: %w", l.ID, err)
-		}
-		if ok {
-			written++
-			log.Printf("wrote %s", path)
-		} else {
-			log.Printf("skipped %s (already exists)", path)
-		}
-	}
-
-	return written, nil
-}
-
-// pushToVault commits the newly written notes and pushes them to a dated
-// branch, reporting where to open the review pull request.
-func pushToVault(cfg config.Config, written int) error {
-	branch, err := vault.CommitAndPush(cfg.VaultPath, cfg.VaultSubdir, written)
-	if err != nil {
-		return fmt.Errorf("git: %w", err)
-	}
-	if branch == "" {
-		log.Println("wrote notes but git reported no changes to commit")
-
-		return nil
-	}
-
-	fmt.Printf("wrote %d note(s) on branch %s\n", written, branch)
-	fmt.Printf("open a pull request: https://git.higherlearning.eu/alrayyes/obsidian/compare/main...%s\n", branch)
-
-	return nil
 }

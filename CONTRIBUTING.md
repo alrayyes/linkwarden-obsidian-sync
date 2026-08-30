@@ -5,13 +5,13 @@
   loop.
 - `internal/config` — loading and validating the TOML config file, its
   environment-variable overrides, and writing `init`'s template.
-- `internal/linkwarden` — the Linkwarden API client and pagination/stop
-  logic.
-- `internal/note` — turning a link into a markdown note, and writing it
-  safely.
-- `internal/state` — the on-disk last-synced marker.
-- `internal/vault` — committing and pushing new notes into the Obsidian
-  vault checkout.
+- `internal/linkwarden` — the Linkwarden API client and pagination logic.
+- `internal/note` — turning a link into a markdown note, writing it, and
+  removing it.
+- `internal/state` — the on-disk marker of every currently-known link and
+  its note's filename.
+- `internal/reconcile` — the add/update/remove diff between what
+  Linkwarden has now and what the vault had last run.
 
 ## Running tests
 
@@ -97,9 +97,13 @@ point the binary at it:
 
 ```shell
 LINKWARDEN_URL=http://localhost:3000 LINKWARDEN_TOKEN="$TOKEN" \
-VAULT_PATH=/tmp/test-vault LINKWARDEN_SYNC_SKIP_GIT=true \
+VAULT_PATH=/tmp/test-vault \
 go run ./cmd/linkwarden-obsidian-sync
 ```
+
+Rename or delete a link through the UI and run it again to exercise the
+update/rename/delete paths, not just add — that's most of what
+`internal/reconcile` actually does.
 
 `docker compose down -v` tears it down. This isn't wired into CI — minting
 a token needs the full login flow above, not a single request a workflow

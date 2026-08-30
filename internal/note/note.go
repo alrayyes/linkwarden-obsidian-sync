@@ -77,26 +77,37 @@ func yamlQuote(s string) string {
 	return `"` + s + `"`
 }
 
-// WriteNote writes a link's note into dir, skipping it if a file with that
-// slug already exists — a rerun after a partial failure shouldn't overwrite a
-// note a human may have started editing.
-func WriteNote(dir string, l linkwarden.Link) (written bool, path string, err error) {
+// Filename is the .md file a link's note is written under.
+func Filename(l linkwarden.Link) string {
+	return Slugify(l.Name, l.ID) + ".md"
+}
+
+// Write renders l as markdown and writes it to dir, creating dir if
+// needed. It always overwrites an existing file at that path:
+// reconciliation's whole point is that the vault mirrors Linkwarden's
+// current state, so a hand-edit to a synced note doesn't survive the next
+// run — the same reasoning that makes Remove unconditional.
+func Write(dir string, l linkwarden.Link) (path string, err error) {
 	if err := os.MkdirAll(dir, 0o750); err != nil {
-		return false, "", fmt.Errorf("creating %s: %w", dir, err)
+		return "", fmt.Errorf("creating %s: %w", dir, err)
 	}
 
-	name := Slugify(l.Name, l.ID) + ".md"
-	path = filepath.Join(dir, name)
-
-	if _, err := os.Stat(path); err == nil {
-		return false, path, nil
-	} else if !os.IsNotExist(err) {
-		return false, "", fmt.Errorf("checking %s: %w", path, err)
-	}
-
+	path = filepath.Join(dir, Filename(l))
 	if err := os.WriteFile(path, []byte(Markdown(l)), 0o600); err != nil {
-		return false, "", fmt.Errorf("writing %s: %w", path, err)
+		return "", fmt.Errorf("writing %s: %w", path, err)
 	}
 
-	return true, path, nil
+	return path, nil
+}
+
+// Remove deletes the note at dir/filename. A note that's already gone
+// (removed by hand, say) isn't an error — the end state either way is
+// "it's gone."
+func Remove(dir, filename string) error {
+	path := filepath.Join(dir, filename)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("removing %s: %w", path, err)
+	}
+
+	return nil
 }

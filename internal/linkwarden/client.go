@@ -10,9 +10,9 @@ import (
 )
 
 // sortDateNewestFirst matches Linkwarden's Sort enum (packages/types/global.ts):
-// DateNewestFirst = 0. Fetching newest-first lets a paginated scan stop at the
-// first link already seen, instead of paging through the whole collection
-// every run.
+// DateNewestFirst = 0. The full collection is fetched every run regardless
+// of sort order, but a stable, documented order still makes a paginated
+// scan reproducible to reason about.
 const sortDateNewestFirst = 0
 
 // errUnexpectedStatus is returned when Linkwarden's HTTP response status
@@ -78,14 +78,13 @@ func NewClient(baseURL, token string) *Client {
 	}
 }
 
-// FetchNewLinks pages through /api/v1/search, newest first, stopping the
-// moment it sees a link that's already been synced (createdAt at or before
-// `since`, and — for the boundary where several links share the exact same
-// timestamp — an ID already recorded in `seenAtSince`). Returned links are in
-// newest-first order; the caller reverses them before writing so notes land
-// in the vault in the order they were actually saved.
-func (c *Client) FetchNewLinks(since time.Time, seenAtSince map[int]bool) ([]Link, error) {
-	var fresh []Link
+// FetchAllLinks pages through /api/v1/search and returns every link in the
+// collection. Reconciling the vault against Linkwarden's current state —
+// catching a link that's been deleted there, not just one that's new —
+// needs the complete set every run; there's no cheaper "what changed"
+// query this API offers instead.
+func (c *Client) FetchAllLinks() ([]Link, error) {
+	var all []Link
 	var cursor *int
 
 	for {
@@ -94,34 +93,15 @@ func (c *Client) FetchNewLinks(since time.Time, seenAtSince map[int]bool) ([]Lin
 			return nil, err
 		}
 		if len(page) == 0 {
-			return fresh, nil
+			return all, nil
 		}
 
-		var stop bool
-		fresh, stop = appendFresh(fresh, page, since, seenAtSince)
-		if stop || nextCursor == nil {
-			return fresh, nil
+		all = append(all, page...)
+		if nextCursor == nil {
+			return all, nil
 		}
 		cursor = nextCursor
 	}
-}
-
-// appendFresh appends the links in page that are newer than since (or, at
-// the exact boundary, not already recorded in seenAtSince) onto fresh. It
-// reports whether page reached a link already synced, meaning the caller
-// should stop paging.
-func appendFresh(fresh, page []Link, since time.Time, seenAtSince map[int]bool) (result []Link, stop bool) {
-	for _, l := range page {
-		if l.CreatedAt.Before(since) {
-			return fresh, true
-		}
-		if l.CreatedAt.Equal(since) && seenAtSince[l.ID] {
-			continue
-		}
-		fresh = append(fresh, l)
-	}
-
-	return fresh, false
 }
 
 // fetchPage requests one page, starting after cursor (the previous page's
