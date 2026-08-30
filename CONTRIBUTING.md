@@ -53,6 +53,59 @@ An uninstalled hook silently does nothing, which is worse than not having
 one, so the `prepare` script runs `lefthook install` for you. You find out
 at the pipeline otherwise, not at the commit.
 
+## Testing against a real Linkwarden instance
+
+`internal/linkwarden`'s tests run against an `httptest` fake modeling
+Linkwarden's actual `/api/v1/search` contract — but a fake can drift from
+the real thing (it happened once already: the response shape and cursor
+pagination scheme were both wrong until a real instance caught it). To
+check the fake — or a suspected API-shape bug — against reality:
+
+```shell
+docker compose up -d
+```
+
+brings up Postgres and Linkwarden (`compose.yaml`; deliberately no
+Meilisearch — see the file's own comment for why). Once
+`curl -s http://localhost:3000/api/v1/auth/csrf` returns `200`, register a
+user, log in through NextAuth's credentials flow, and mint an access
+token:
+
+```shell
+curl -s -X POST http://localhost:3000/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test User","username":"testuser","password":"testpassword123","email":""}'
+
+COOKIES=$(mktemp)
+CSRF=$(curl -s -c "$COOKIES" http://localhost:3000/api/v1/auth/csrf | jq -r .csrfToken)
+curl -s -b "$COOKIES" -c "$COOKIES" -X POST http://localhost:3000/api/v1/auth/callback/credentials \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "username=testuser" \
+  --data-urlencode "password=testpassword123" \
+  --data-urlencode "csrfToken=$CSRF" \
+  --data-urlencode "json=true"
+
+TOKEN=$(curl -s -b "$COOKIES" -X POST http://localhost:3000/api/v1/tokens \
+  -H "Content-Type: application/json" \
+  -d '{"name":"sync-test","expires":4}' | jq -r .response.secretKey)
+```
+
+(`expires: 4` is Linkwarden's `TokenExpiry.never` — see
+`packages/types/global.ts` upstream; the API takes that enum, not a day
+count.) Save a link or two through the UI at <http://localhost:3000>, then
+point the binary at it:
+
+```shell
+LINKWARDEN_URL=http://localhost:3000 LINKWARDEN_TOKEN="$TOKEN" \
+VAULT_PATH=/tmp/test-vault LINKWARDEN_SYNC_SKIP_GIT=true \
+go run ./cmd/linkwarden-obsidian-sync
+```
+
+`docker compose down -v` tears it down. This isn't wired into CI — minting
+a token needs the full login flow above, not a single request a workflow
+step could make on its own — so it's a manual check, reached for when a
+fake's fidelity to the real API is actually in question.
+
 ## Adding a change
 
 Small, atomic commits — one logical change each, building and passing tests
