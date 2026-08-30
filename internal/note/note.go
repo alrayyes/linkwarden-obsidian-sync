@@ -1,4 +1,6 @@
-package main
+// Package note turns a Linkwarden link into an Obsidian note and writes it
+// safely to disk.
+package note
 
 import (
 	"fmt"
@@ -6,15 +8,17 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/alrayyes/linkwarden-obsidian-sync/internal/linkwarden"
 )
 
 var slugDisallowed = regexp.MustCompile(`[^a-zA-Z0-9 _-]+`)
 
-// slugify turns a link's name (or, failing that, its URL) into a filesystem-
+// Slugify turns a link's name (or, failing that, its URL) into a filesystem-
 // and Obsidian-safe filename. It never returns an empty string: a name that's
 // all punctuation falls back to "link-<id>" so two links never collide on an
 // empty slug.
-func slugify(name string, id int) string {
+func Slugify(name string, id int) string {
 	cleaned := slugDisallowed.ReplaceAllString(name, "")
 	cleaned = strings.TrimSpace(cleaned)
 	if cleaned == "" {
@@ -26,10 +30,10 @@ func slugify(name string, id int) string {
 	return cleaned
 }
 
-// noteMarkdown renders a link as an Obsidian note: YAML frontmatter the vault
+// NoteMarkdown renders a link as an Obsidian note: YAML frontmatter the vault
 // can query on (url, tags, collection, created), then the description as the
 // body so the note reads as something rather than bare metadata.
-func noteMarkdown(l link) string {
+func NoteMarkdown(l linkwarden.Link) string {
 	var b strings.Builder
 
 	b.WriteString("---\n")
@@ -71,15 +75,15 @@ func yamlQuote(s string) string {
 	return `"` + s + `"`
 }
 
-// writeNote writes a link's note into dir, skipping it if a file with that
+// WriteNote writes a link's note into dir, skipping it if a file with that
 // slug already exists — a rerun after a partial failure shouldn't overwrite a
 // note a human may have started editing.
-func writeNote(dir string, l link) (written bool, path string, err error) {
+func WriteNote(dir string, l linkwarden.Link) (written bool, path string, err error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return false, "", fmt.Errorf("creating %s: %w", dir, err)
 	}
 
-	name := slugify(l.Name, l.ID) + ".md"
+	name := Slugify(l.Name, l.ID) + ".md"
 	path = filepath.Join(dir, name)
 
 	if _, err := os.Stat(path); err == nil {
@@ -88,7 +92,7 @@ func writeNote(dir string, l link) (written bool, path string, err error) {
 		return false, "", err
 	}
 
-	if err := os.WriteFile(path, []byte(noteMarkdown(l)), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(NoteMarkdown(l)), 0o644); err != nil {
 		return false, "", fmt.Errorf("writing %s: %w", path, err)
 	}
 	return true, path, nil
