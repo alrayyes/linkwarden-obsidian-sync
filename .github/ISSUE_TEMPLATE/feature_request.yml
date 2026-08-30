@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose a new feature or change
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: "As a ‹who›, I want ‹what›, so that ‹why›."
+      placeholder: As a ..., I want ..., so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      description: Given/When/Then, 3-5 testable rules.
+      placeholder: |
+        - Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of done
+      description: What has to be true for this to count as finished.
+    validations:
+      required: true
