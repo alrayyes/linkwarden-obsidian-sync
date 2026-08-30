@@ -5,7 +5,7 @@ before:
     - go mod tidy
 
 builds:
-  - main: .
+  - main: ./cmd/linkwarden-obsidian-sync
     binary: linkwarden-obsidian-sync
     env:
       - CGO_ENABLED=0
