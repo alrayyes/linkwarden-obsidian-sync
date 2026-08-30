@@ -23,6 +23,32 @@ archives:
     name_template: >-
       {{ .ProjectName }}_{{ .Os }}_{{ .Arch }}
 
+dockers:
+  - image_templates:
+      - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-amd64"
+    use: buildx
+    goos: linux
+    goarch: amd64
+    build_flag_templates:
+      - --platform=linux/amd64
+  - image_templates:
+      - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-arm64"
+    use: buildx
+    goos: linux
+    goarch: arm64
+    build_flag_templates:
+      - --platform=linux/arm64
+
+docker_manifests:
+  - name_template: "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-amd64"
+      - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/alrayyes/linkwarden-obsidian-sync:latest"
+    image_templates:
+      - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-amd64"
+      - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-arm64"
+
 changelog:
   disable: true
 
