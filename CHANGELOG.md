@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.1.0...v1.2.0) (2026-08-30)
+
+
+### Features
+
+* **config:** load configuration from an XDG config file ([#33](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/33)) ([8ecf137](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/8ecf1377cf72568cdb7b40e754126e4660d6c7d2)), closes [#31](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/31)
+
 ## [1.1.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.0.0...v1.1.0) (2026-08-30)
 
 
