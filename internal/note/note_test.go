@@ -74,38 +74,66 @@ func TestNoteMarkdown(t *testing.T) {
 	})
 }
 
-func TestWriteNoteSkipsExisting(t *testing.T) {
+func TestWriteOverwritesAnExistingNote(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
 	l := linkwarden.Link{ID: 1, Name: "First write", URL: "https://example.com", CreatedAt: time.Now()}
 
-	written, path, err := note.WriteNote(dir, l)
-	require.NoError(t, err)
-	require.True(t, written, "first call should write the note")
-
-	original, err := os.ReadFile(path) //nolint:gosec // path is this test's own t.TempDir() fixture, not user input
+	path, err := note.Write(dir, l)
 	require.NoError(t, err)
 
-	// Simulate a human having started editing the note before a rerun.
-	edited := string(original) + "\nmy own notes\n"
-	require.NoError(t, os.WriteFile(path, []byte(edited), 0o600)) //nolint:gosec // path is this test's own t.TempDir() fixture, not user input
+	// Simulate a human having edited the note, or an earlier sync writing
+	// stale content, before a rerun.
+	require.NoError(t, os.WriteFile(path, []byte("stale content\n"), 0o600))
 
-	written, _, err = note.WriteNote(dir, l)
+	l.Description = "updated description"
+	_, err = note.Write(dir, l)
 	require.NoError(t, err)
-	require.False(t, written, "second call must not overwrite an existing note")
 
 	after, err := os.ReadFile(path) //nolint:gosec // path is this test's own t.TempDir() fixture, not user input
 	require.NoError(t, err)
-	require.Equal(t, edited, string(after))
+	require.Contains(t, string(after), "updated description")
+	require.NotContains(t, string(after), "stale content")
 }
 
-func TestWriteNoteCreatesDir(t *testing.T) {
+func TestWriteCreatesDir(t *testing.T) {
 	t.Parallel()
 
 	dir := filepath.Join(t.TempDir(), "nested", "subdir")
 	l := linkwarden.Link{ID: 1, Name: "x", URL: "https://example.com", CreatedAt: time.Now()}
 
-	_, _, err := note.WriteNote(dir, l)
+	_, err := note.Write(dir, l)
 	require.NoError(t, err)
+}
+
+func TestFilename(t *testing.T) {
+	t.Parallel()
+
+	require.Equal(t, "A Real Link Title.md", note.Filename(linkwarden.Link{ID: 1, Name: "A Real Link Title"}))
+	require.Equal(t, "link-42.md", note.Filename(linkwarden.Link{ID: 42, Name: ""}))
+}
+
+func TestRemove(t *testing.T) {
+	t.Parallel()
+
+	t.Run("deletes an existing note", func(t *testing.T) {
+		t.Parallel()
+
+		dir := t.TempDir()
+		l := linkwarden.Link{ID: 1, Name: "x", URL: "https://example.com", CreatedAt: time.Now()}
+		path, err := note.Write(dir, l)
+		require.NoError(t, err)
+
+		require.NoError(t, note.Remove(dir, filepath.Base(path)))
+
+		_, err = os.Stat(path)
+		require.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("a note already gone is not an error", func(t *testing.T) {
+		t.Parallel()
+
+		require.NoError(t, note.Remove(t.TempDir(), "never-existed.md"))
+	})
 }

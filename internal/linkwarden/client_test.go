@@ -30,12 +30,12 @@ type fakeSearchResponse struct {
 }
 
 // fakeLinkwarden serves paginated /api/v1/search responses from an
-// in-memory, newest-first list, mimicking the real API's Prisma cursor
-// pagination: an omitted cursor starts from the beginning, a given cursor
-// is the ID of the last link the caller already has, and nextCursor is the
-// last link's ID in the response (or nil once a page comes back shorter
-// than pageSize) — not a numeric offset. requests, if non-nil, is
-// incremented once per request received.
+// in-memory list, mimicking the real API's Prisma cursor pagination: an
+// omitted cursor starts from the beginning, a given cursor is the ID of
+// the last link the caller already has, and nextCursor is the last link's
+// ID in the response (or nil once a page comes back shorter than
+// pageSize) — not a numeric offset. requests, if non-nil, is incremented
+// once per request received.
 func fakeLinkwarden(t *testing.T, all []linkwarden.Link, pageSize int, requests *int) *httptest.Server {
 	t.Helper()
 
@@ -75,10 +75,10 @@ func fakeLinkwarden(t *testing.T, all []linkwarden.Link, pageSize int, requests 
 	}))
 }
 
-// cursorStart finds where in all (newest-first) the page after cursor
-// begins — the position just past the link whose ID matches cursor, or 0
-// when cursor is empty (the first page). ok is false only on a
-// non-numeric cursor, mirroring the real API's 400 on a malformed one.
+// cursorStart finds where in all the page after cursor begins — the
+// position just past the link whose ID matches cursor, or 0 when cursor
+// is empty (the first page). ok is false only on a non-numeric cursor,
+// mirroring the real API's 400 on a malformed one.
 func cursorStart(all []linkwarden.Link, cursor string) (start int, ok bool) {
 	if cursor == "" {
 		return 0, true
@@ -98,61 +98,41 @@ func cursorStart(all []linkwarden.Link, cursor string) (start int, ok bool) {
 	return len(all), true
 }
 
-func linksAt(t time.Time, ids ...int) []linkwarden.Link {
+func linksWithIDs(ids ...int) []linkwarden.Link {
 	links := make([]linkwarden.Link, len(ids))
 	for i, id := range ids {
-		links[i] = linkwarden.Link{ID: id, Name: "link", URL: "https://example.com", CreatedAt: t}
+		links[i] = linkwarden.Link{ID: id, Name: "link", URL: "https://example.com", CreatedAt: time.Now()}
 	}
 
 	return links
 }
 
-func TestFetchNewLinks(t *testing.T) {
+func TestFetchAllLinks(t *testing.T) {
 	t.Parallel()
 
-	day1 := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
-	day2 := time.Date(2026, 8, 21, 0, 0, 0, 0, time.UTC)
-
-	t.Run("no state", func(t *testing.T) {
+	t.Run("empty collection", func(t *testing.T) {
 		t.Parallel()
 
-		all := append(linksAt(day2, 2, 1), linksAt(day1, 0)...) // newest-first
+		srv := fakeLinkwarden(t, nil, 50, nil)
+		defer srv.Close()
+
+		c := linkwarden.NewClient(srv.URL, "test-token")
+		got, err := c.FetchAllLinks()
+		require.NoError(t, err)
+		require.Empty(t, got)
+	})
+
+	t.Run("single page", func(t *testing.T) {
+		t.Parallel()
+
+		all := linksWithIDs(3, 2, 1)
 		srv := fakeLinkwarden(t, all, 50, nil)
 		defer srv.Close()
 
 		c := linkwarden.NewClient(srv.URL, "test-token")
-		got, err := c.FetchNewLinks(time.Time{}, nil)
+		got, err := c.FetchAllLinks()
 		require.NoError(t, err)
 		require.Len(t, got, 3)
-	})
-
-	t.Run("stops at last synced", func(t *testing.T) {
-		t.Parallel()
-
-		all := append(linksAt(day2, 2, 1), linksAt(day1, 0)...)
-		srv := fakeLinkwarden(t, all, 50, nil)
-		defer srv.Close()
-
-		c := linkwarden.NewClient(srv.URL, "test-token")
-		got, err := c.FetchNewLinks(day1, map[int]bool{0: true})
-		require.NoError(t, err)
-		require.Len(t, got, 2)
-	})
-
-	t.Run("same timestamp boundary", func(t *testing.T) {
-		t.Parallel()
-
-		same := time.Date(2026, 8, 21, 12, 0, 0, 0, time.UTC)
-		all := linksAt(same, 3, 2, 1) // three links saved in the same second
-		srv := fakeLinkwarden(t, all, 50, nil)
-		defer srv.Close()
-
-		c := linkwarden.NewClient(srv.URL, "test-token")
-		// Already synced link 1 and 2 at this exact timestamp; only 3 is new.
-		got, err := c.FetchNewLinks(same, map[int]bool{1: true, 2: true})
-		require.NoError(t, err)
-		require.Len(t, got, 1)
-		require.Equal(t, 3, got[0].ID)
 	})
 
 	t.Run("unauthorized", func(t *testing.T) {
@@ -162,18 +142,16 @@ func TestFetchNewLinks(t *testing.T) {
 		defer srv.Close()
 
 		c := linkwarden.NewClient(srv.URL, "wrong-token")
-		_, err := c.FetchNewLinks(time.Time{}, nil)
+		_, err := c.FetchAllLinks()
 		require.Error(t, err)
 	})
 }
 
-// TestFetchNewLinksPagination covers the multi-page cursor mechanics
-// specifically — split from TestFetchNewLinks so neither function grows
+// TestFetchAllLinksPagination covers the multi-page cursor mechanics
+// specifically — split from TestFetchAllLinks so neither function grows
 // past this repo's funlen limit.
-func TestFetchNewLinksPagination(t *testing.T) {
+func TestFetchAllLinksPagination(t *testing.T) {
 	t.Parallel()
-
-	day1 := time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
 
 	t.Run("pages using the server's ID-based nextCursor, not an offset", func(t *testing.T) {
 		t.Parallel()
@@ -181,12 +159,12 @@ func TestFetchNewLinksPagination(t *testing.T) {
 		// Small page size forces multiple requests; IDs are deliberately not
 		// contiguous with position, to catch a client that assumes an offset
 		// instead of echoing the server's own nextCursor back.
-		all := linksAt(day1, 50, 40, 30, 20, 10)
+		all := linksWithIDs(50, 40, 30, 20, 10)
 		srv := fakeLinkwarden(t, all, 2, nil)
 		defer srv.Close()
 
 		c := linkwarden.NewClient(srv.URL, "test-token")
-		got, err := c.FetchNewLinks(time.Time{}, nil)
+		got, err := c.FetchAllLinks()
 		require.NoError(t, err)
 		require.Len(t, got, 5)
 	})
@@ -195,14 +173,29 @@ func TestFetchNewLinksPagination(t *testing.T) {
 		t.Parallel()
 
 		var requests int
-		all := linksAt(day1, 2, 1)
+		all := linksWithIDs(2, 1)
 		srv := fakeLinkwarden(t, all, 50, &requests)
 		defer srv.Close()
 
 		c := linkwarden.NewClient(srv.URL, "test-token")
-		got, err := c.FetchNewLinks(time.Time{}, nil)
+		got, err := c.FetchAllLinks()
 		require.NoError(t, err)
 		require.Len(t, got, 2)
 		require.Equal(t, 1, requests)
+	})
+
+	t.Run("collection exactly one page long still resolves in two requests", func(t *testing.T) {
+		t.Parallel()
+
+		var requests int
+		all := linksWithIDs(2, 1) // pageSize below is also 2
+		srv := fakeLinkwarden(t, all, 2, &requests)
+		defer srv.Close()
+
+		c := linkwarden.NewClient(srv.URL, "test-token")
+		got, err := c.FetchAllLinks()
+		require.NoError(t, err)
+		require.Len(t, got, 2)
+		require.Equal(t, 2, requests, "a full page always implies a nextCursor, so one more (empty) request confirms the end")
 	})
 }
