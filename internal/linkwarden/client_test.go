@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/alrayyes/linkwarden-obsidian-sync/internal/linkwarden"
+	"github.com/stretchr/testify/require"
 )
 
 // fakeSearchResponse mirrors the shape of Linkwarden's own /api/v1/search
@@ -31,6 +30,7 @@ func fakeLinkwarden(t *testing.T, all []linkwarden.Link) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer test-token" {
 			w.WriteHeader(http.StatusUnauthorized)
+
 			return
 		}
 
@@ -39,15 +39,13 @@ func fakeLinkwarden(t *testing.T, all []linkwarden.Link) *httptest.Server {
 			n, err := strconv.Atoi(c)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
+
 				return
 			}
 			cursor = n
 		}
 
-		end := cursor + linkwarden.PageSize
-		if end > len(all) {
-			end = len(all)
-		}
+		end := min(cursor+linkwarden.PageSize, len(all))
 		var page []linkwarden.Link
 		if cursor < len(all) {
 			page = all[cursor:end]
@@ -55,7 +53,7 @@ func fakeLinkwarden(t *testing.T, all []linkwarden.Link) *httptest.Server {
 
 		resp := fakeSearchResponse{Data: page, Success: true}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 }
 
@@ -64,6 +62,7 @@ func linksAt(t time.Time, ids ...int) []linkwarden.Link {
 	for i, id := range ids {
 		links[i] = linkwarden.Link{ID: id, Name: "link", URL: "https://example.com", CreatedAt: t}
 	}
+
 	return links
 }
 
