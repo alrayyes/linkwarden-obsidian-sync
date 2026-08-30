@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.3.0...v2.0.0) (2026-08-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* reconcile the vault directly instead of committing via git ([#41](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/41))
+
+### Features
+
+* reconcile the vault directly instead of committing via git ([#41](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/41)) ([1bce1dd](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/1bce1dd5edbdd2d87e9c03e77ef094b31494d075)), closes [#40](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/40)
+
 ## [1.3.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.2.1...v1.3.0) (2026-08-30)
 
 
