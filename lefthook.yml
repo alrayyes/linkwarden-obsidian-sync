@@ -1,0 +1,56 @@
+# The same commands CI runs, so the two cannot drift. The hook catches it
+# early; CI is the gate that cannot be skipped.
+#
+# Every Go command runs through Docker rather than the host toolchain, pinned
+# to the `go` directive in go.mod: a host package manager updating `go` and
+# `golangci-lint` independently is a real failure mode, not a hypothetical
+# one. See rules/go.md and rules/go-lint.md for why.
+
+# pre-commit may write. Let the fixer run and restage what it touched — a
+# commit should not fail over a formatting nit a tool can settle by itself.
+pre-commit:
+  jobs:
+    - name: gofmt
+      glob: "*.go"
+      run: >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v "$(pwd):/src" -w /src
+        -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
+        -e GOMODCACHE=/gomod -v "$HOME/.cache/go-mod-docker:/gomod"
+        golang:1.27.0-bookworm gofmt -w {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  jobs:
+    # Resolved from node_modules rather than fetched by bunx: commitlint has
+    # to load the config its own config extends, and bunx cannot resolve a
+    # sibling package for it. Run `bun install` if this cannot find itself.
+    - name: commitlint
+      run: bunx commitlint --edit {1}
+
+# pre-push never writes. A hook rewriting files under a push leaves the
+# pushed commit and the working tree disagreeing about what was reviewed.
+#
+# Parallel because of that: nothing here touches a file, so no job can be
+# reading what another is rewriting.
+pre-push:
+  parallel: true
+  jobs:
+    - name: golangci-lint
+      # .golangci.yml doesn't exist yet (issue #16 adds it) — golangci-lint
+      # runs its own default linter set until then, and picks the repo's
+      # config up for free the moment that file lands, no change needed here.
+      run: >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v "$(pwd):/src" -w /src
+        -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
+        -e GOLANGCI_LINT_CACHE=/cache -v "$HOME/.cache/golangci-lint-docker:/cache"
+        golangci/golangci-lint:v2.12.2 golangci-lint run ./...
+
+    - name: test
+      run: >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v "$(pwd):/src" -w /src
+        -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
+        -e GOMODCACHE=/gomod -v "$HOME/.cache/go-mod-docker:/gomod"
+        golang:1.27.0-bookworm go test ./... -race

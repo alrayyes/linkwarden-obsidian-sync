@@ -5,3 +5,4 @@
 *.ico binary
 
 go.sum -diff linguist-generated
+bun.lock -diff
