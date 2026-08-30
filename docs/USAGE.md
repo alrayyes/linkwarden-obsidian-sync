@@ -150,3 +150,34 @@ This is what makes a rename and a deletion detectable — the ID is stable,
 the filename isn't. Delete this file to force a full add-everything resync
 (safe: every note gets overwritten with the same content it already has,
 nothing is deleted since there's no "previous" state to diff against).
+
+## Docker
+
+```shell
+docker run --rm \
+  -e LINKWARDEN_URL=https://linkwarden.example.com \
+  -e LINKWARDEN_TOKEN=eyJ... \
+  -e VAULT_PATH=/vault -v ~/Documents/obsidian:/vault \
+  -e LINKWARDEN_SYNC_STATE_DIR=/state -v linkwarden-sync-state:/state \
+  ghcr.io/alrayyes/linkwarden-obsidian-sync:latest
+```
+
+Configuration is entirely through environment variables here — see the
+[reference above](#configuration-reference) for the full list — since
+there's no config file mounted in by default. `VAULT_SUBDIR` defaults to
+`Linkwarden` same as anywhere else, so it's usually not worth setting.
+
+**Mount `state_dir` to a persistent volume.** Without it, the container
+starts from empty state on every run: every link looks "new" again (an
+already-existing note just gets rewritten with the same content — no
+duplication, no data loss, just wasted work) and a deletion in Linkwarden
+is never detected, since there's no previous state to diff against. A
+named volume (`linkwarden-sync-state` above) or a bind mount both work.
+
+To run it on a schedule, put the `docker run` command in a `cron`/systemd
+timer the same way you would the bare binary — the image doesn't include
+its own scheduler.
+
+Images are published for `linux/amd64` and `linux/arm64`, signed with a
+build provenance attestation (`gh attestation verify` against
+`ghcr.io/alrayyes/linkwarden-obsidian-sync`).
