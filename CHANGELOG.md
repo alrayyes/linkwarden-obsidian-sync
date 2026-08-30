@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.2.1...v1.3.0) (2026-08-30)
+
+
+### Features
+
+* offer to write a config template on a first, unconfigured run ([#38](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/38)) ([5d74168](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/5d741688979fe12e8b6576a93bfcba7d3b6260db))
+
 ## [1.2.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.2.0...v1.2.1) (2026-08-30)
 
 
