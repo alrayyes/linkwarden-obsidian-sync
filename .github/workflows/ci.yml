@@ -30,3 +30,19 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: hadolint/hadolint-action@3fc49fb50d59c6ab7917a2e4195dba633e515b29 # v3.5.0
+        with:
+          dockerfile: Dockerfile
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      # A plain `docker build` proves the Dockerfile still builds, which
+      # hadolint above never checks — it needs the same prebuilt binary
+      # goreleaser's `dockers:` block hands it at release time.
+      - run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o linkwarden-obsidian-sync ./cmd/linkwarden-obsidian-sync
+      - run: docker build -t linkwarden-obsidian-sync:ci .

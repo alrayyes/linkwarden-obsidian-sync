@@ -20,6 +20,27 @@ pre-commit:
         golang:1.27.0-bookworm gofmt -w {staged_files}
       stage_fixed: true
 
+    - name: hadolint
+      glob: "Dockerfile"
+      run: docker run --rm -i hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d < Dockerfile
+
+    # Scoped to what the Dockerfile's COPY actually pulls in, so an
+    # unrelated commit skips this and stays fast; a Go or Dockerfile
+    # change pays for a warm-cache image build to prove it still builds —
+    # hadolint above reads the Dockerfile as text and never checks that.
+    - name: docker-build
+      glob: "{Dockerfile,**/*.go,go.mod,go.sum}"
+      run: >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v "$(pwd):/src" -w /src
+        -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
+        -e GOMODCACHE=/gomod -v "$HOME/.cache/go-mod-docker:/gomod"
+        -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64
+        golang:1.27.0-bookworm go build -o linkwarden-obsidian-sync ./cmd/linkwarden-obsidian-sync
+        && docker build -t linkwarden-obsidian-sync:pre-commit-check .
+        && rm -f linkwarden-obsidian-sync
+        && docker rmi linkwarden-obsidian-sync:pre-commit-check
+
 commit-msg:
   jobs:
     # Resolved from node_modules rather than fetched by bunx: commitlint has
@@ -60,3 +81,18 @@ pre-push:
         -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
         -e GOMODCACHE=/gomod -v "$HOME/.cache/go-mod-docker:/gomod"
         golang:1.27.0-bookworm go test ./... -race
+
+    - name: hadolint
+      run: docker run --rm -i hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d < Dockerfile
+
+    - name: docker-build
+      run: >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v "$(pwd):/src" -w /src
+        -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
+        -e GOMODCACHE=/gomod -v "$HOME/.cache/go-mod-docker:/gomod"
+        -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64
+        golang:1.27.0-bookworm go build -o linkwarden-obsidian-sync ./cmd/linkwarden-obsidian-sync
+        && docker build -t linkwarden-obsidian-sync:pre-push-check .
+        && rm -f linkwarden-obsidian-sync
+        && docker rmi linkwarden-obsidian-sync:pre-push-check

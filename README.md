@@ -25,7 +25,19 @@ linkwarden-obsidian-sync
 
 A prebuilt binary (linux/darwin, amd64/arm64) is on the [latest
 release](https://github.com/alrayyes/linkwarden-obsidian-sync/releases/latest)
-if you'd rather not build with Go.
+if you'd rather not build with Go, or run it as a container:
+
+```shell
+docker run --rm \
+  -e LINKWARDEN_URL=https://linkwarden.example.com \
+  -e LINKWARDEN_TOKEN=eyJ... \
+  -e VAULT_PATH=/vault -v ~/Documents/obsidian:/vault \
+  -e LINKWARDEN_SYNC_STATE_DIR=/state -v linkwarden-sync-state:/state \
+  ghcr.io/alrayyes/linkwarden-obsidian-sync:latest
+```
+
+(mount `/state` too, or every run treats every link as new — see
+[docs/USAGE.md](docs/USAGE.md#docker))
 
 See **[docs/USAGE.md](docs/USAGE.md)** for exactly what gets added, updated
 and removed on a run (with examples), the full configuration reference, and

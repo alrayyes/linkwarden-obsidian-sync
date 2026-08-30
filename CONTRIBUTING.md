@@ -30,7 +30,16 @@ golangci-lint run ./...
 ```
 
 CI runs the same checks, plus `govulncheck` for known CVEs in pinned
-dependencies.
+dependencies, and separately lints and builds the `Dockerfile`:
+
+```shell
+docker run --rm -i hadolint/hadolint:v2.15.1 < Dockerfile
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o linkwarden-obsidian-sync ./cmd/linkwarden-obsidian-sync
+docker build -t linkwarden-obsidian-sync:local .
+```
+
+hadolint reads the Dockerfile as text; the actual `docker build` is what
+proves it still works, which hadolint alone never checks.
 
 ## Getting set up
 
@@ -41,7 +50,7 @@ dependencies.
   tools resolve and stay pinned.
 - **[Docker](https://docker.com)**, which the hooks use to run `gofmt`,
   `golangci-lint` and `go test` at a pinned version rather than whatever the
-  host toolchain happens to have.
+  host toolchain happens to have, and to build/lint the `Dockerfile` itself.
 
 One command installs the tooling and the git hooks:
 
