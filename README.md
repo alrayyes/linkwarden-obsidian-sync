@@ -1,6 +1,7 @@
 # linkwarden-obsidian-sync
 
 [![ci](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml/badge.svg)](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml)
+[![Codecov](https://codecov.io/gh/alrayyes/linkwarden-obsidian-sync/graph/badge.svg)](https://codecov.io/gh/alrayyes/linkwarden-obsidian-sync)
 [![release](https://img.shields.io/github/v/release/alrayyes/linkwarden-obsidian-sync)](https://github.com/alrayyes/linkwarden-obsidian-sync/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/alrayyes/linkwarden-obsidian-sync.svg)](https://pkg.go.dev/github.com/alrayyes/linkwarden-obsidian-sync)
 [![license](https://img.shields.io/github/license/alrayyes/linkwarden-obsidian-sync)](LICENSE)
