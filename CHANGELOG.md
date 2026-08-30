@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.2.0...v1.2.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* **linkwarden:** decode the real /api/v1/search response shape ([#36](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/36)) ([80ac734](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/80ac7341bc1e3d37a00c281fbff7f9d4d2296ad5)), closes [#35](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/35)
+
 ## [1.2.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.1.0...v1.2.0) (2026-08-30)
 
 
