@@ -15,8 +15,15 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      # The default GITHUB_TOKEN can't open the release pull request here:
+      # this repo's Settings has "Allow GitHub Actions to create and approve
+      # pull requests" off, so release-please-action needs a personal token
+      # to push past that (#26). RELEASE_TOKEN is a fine-grained PAT scoped
+      # to this repo with Contents: read/write and Pull requests: write.
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
 
   goreleaser:
     needs: release-please
