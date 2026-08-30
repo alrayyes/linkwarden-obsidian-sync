@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.0.0...v2.1.0) (2026-08-30)
+
+
+### Features
+
+* **docker:** add a published Docker image ([#43](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/43)) ([f35b38a](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/f35b38ac06844615546c91c62552cde1e5b2af83))
+
 ## [2.0.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v1.3.0...v2.0.0) (2026-08-30)
 
 
