@@ -55,7 +55,7 @@ release](https://github.com/alrayyes/linkwarden-obsidian-sync/releases/latest)
 (linux/darwin, amd64/arm64), or build it yourself:
 
 ```shell
-go build -o linkwarden-obsidian-sync .
+go build -o linkwarden-obsidian-sync ./cmd/linkwarden-obsidian-sync
 LINKWARDEN_URL=https://linkwarden.example.com \
 LINKWARDEN_TOKEN=eyJ... \
 ./linkwarden-obsidian-sync

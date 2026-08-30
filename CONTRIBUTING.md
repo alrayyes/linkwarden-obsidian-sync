@@ -1,11 +1,14 @@
 # Contributing
 
-A single small Go CLI, no subpackages.
-
-- `linkwarden.go` — the Linkwarden API client and pagination/stop logic.
-- `note.go` — turning a link into a markdown note, and writing it safely.
-- `state.go` — the on-disk last-synced marker.
-- `main.go` — wiring, config, and the git commit/push step.
+- `cmd/linkwarden-obsidian-sync/main.go` — the composition root: wiring,
+  config, and the top-level sync loop.
+- `internal/linkwarden` — the Linkwarden API client and pagination/stop
+  logic.
+- `internal/note` — turning a link into a markdown note, and writing it
+  safely.
+- `internal/state` — the on-disk last-synced marker.
+- `internal/vault` — committing and pushing new notes into the Obsidian
+  vault checkout.
 
 ## Running tests
 

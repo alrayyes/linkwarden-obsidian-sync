@@ -10,9 +10,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"time"
+
+	"github.com/alrayyes/linkwarden-obsidian-sync/internal/linkwarden"
+	"github.com/alrayyes/linkwarden-obsidian-sync/internal/note"
+	"github.com/alrayyes/linkwarden-obsidian-sync/internal/state"
+	"github.com/alrayyes/linkwarden-obsidian-sync/internal/vault"
 )
 
 // version is set at build time via goreleaser's -X main.version ldflag,
@@ -28,13 +31,13 @@ func main() {
 	}
 
 	statePath := filepath.Join(cfg.stateDir, "last-synced.json")
-	state, err := loadState(statePath)
+	st, err := state.Load(statePath)
 	if err != nil {
 		log.Fatalf("reading state at %s: %v", statePath, err)
 	}
 
-	client := newLinkwardenClient(cfg.linkwardenURL, cfg.linkwardenToken)
-	freshNewestFirst, err := client.fetchNewLinks(state.LastSyncedAt, state.seenAtLastSet())
+	client := linkwarden.NewClient(cfg.linkwardenURL, cfg.linkwardenToken)
+	freshNewestFirst, err := client.FetchNewLinks(st.LastSyncedAt, st.SeenAtLastSet())
 	if err != nil {
 		log.Fatalf("fetching links: %v", err)
 	}
@@ -49,7 +52,7 @@ func main() {
 	written := 0
 	for i := len(freshNewestFirst) - 1; i >= 0; i-- {
 		l := freshNewestFirst[i]
-		ok, path, err := writeNote(notesDir, l)
+		ok, path, err := note.WriteNote(notesDir, l)
 		if err != nil {
 			log.Fatalf("writing note for link %d: %v", l.ID, err)
 		}
@@ -61,8 +64,8 @@ func main() {
 		}
 	}
 
-	newState := nextState(state, freshNewestFirst)
-	if err := saveState(statePath, newState); err != nil {
+	newState := state.Next(st, freshNewestFirst)
+	if err := state.Save(statePath, newState); err != nil {
 		log.Fatalf("saving state to %s: %v", statePath, err)
 	}
 
@@ -76,7 +79,7 @@ func main() {
 		return
 	}
 
-	branch, err := commitAndPush(cfg.vaultPath, cfg.vaultSubdir, written)
+	branch, err := vault.CommitAndPush(cfg.vaultPath, cfg.vaultSubdir, written)
 	if err != nil {
 		log.Fatalf("git: %v", err)
 	}
@@ -87,52 +90,6 @@ func main() {
 
 	fmt.Printf("wrote %d note(s) on branch %s\n", written, branch)
 	fmt.Printf("open a pull request: https://git.higherlearning.eu/alrayyes/obsidian/compare/main...%s\n", branch)
-}
-
-// commitAndPush stages the vault subdirectory, commits on a dated branch and
-// pushes it. It returns the branch name, or "" if there was nothing to
-// commit. It shells out to git directly rather than a library — this only
-// ever needs to run against the one local clone a human already has
-// configured with working push credentials.
-func commitAndPush(vaultPath, subdir string, count int) (string, error) {
-	run := func(args ...string) (string, error) {
-		cmd := exec.Command("git", args...)
-		cmd.Dir = vaultPath
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			return "", fmt.Errorf("git %v: %w\n%s", args, err, out)
-		}
-		return string(out), nil
-	}
-
-	branch := fmt.Sprintf("linkwarden-sync-%s", time.Now().Format("2006-01-02-150405"))
-	if _, err := run("checkout", "-b", branch); err != nil {
-		return "", err
-	}
-
-	if _, err := run("add", subdir); err != nil {
-		return "", err
-	}
-
-	status, err := run("status", "--porcelain", "--", subdir)
-	if err != nil {
-		return "", err
-	}
-	if status == "" {
-		_, _ = run("checkout", "-")
-		_, _ = run("branch", "-D", branch)
-		return "", nil
-	}
-
-	msg := fmt.Sprintf("docs(linkwarden): sync %d new link(s)", count)
-	if _, err := run("commit", "-m", msg); err != nil {
-		return "", err
-	}
-	if _, err := run("push", "-u", "origin", branch); err != nil {
-		return "", err
-	}
-
-	return branch, nil
 }
 
 type config struct {
