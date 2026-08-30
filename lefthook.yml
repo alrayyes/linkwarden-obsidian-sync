@@ -40,12 +40,19 @@ pre-push:
       # .golangci.yml doesn't exist yet (issue #16 adds it) — golangci-lint
       # runs its own default linter set until then, and picks the repo's
       # config up for free the moment that file lands, no change needed here.
+      #
+      # v2.13.2, not rules/go-lint.md's own v2.12.2 example: v2.12.2 is built
+      # with go1.26, which refuses to load config against this repo's
+      # go 1.27.0 directive ("the Go language version used to build
+      # golangci-lint is lower than the targeted Go version") — confirmed
+      # live, the exact failure mode that rule's own reasoning warns about.
+      # v2.13.2 is built with go1.27.0.
       run: >-
         docker run --rm --user "$(id -u):$(id -g)"
         -v "$(pwd):/src" -w /src
         -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
         -e GOLANGCI_LINT_CACHE=/cache -v "$HOME/.cache/golangci-lint-docker:/cache"
-        golangci/golangci-lint:v2.12.2 golangci-lint run ./...
+        golangci/golangci-lint:v2.13.2 golangci-lint run ./...
 
     - name: test
       run: >-
