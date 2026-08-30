@@ -38,13 +38,13 @@ linters:
       require-specific: true
     testifylint:
       enable-all: true
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - dupl
 formatters:
   enable:
     - gci
     - gofumpt
     - goimports
-issues:
-  rules:
-    - path: _test\.go
-      linters:
-        - dupl
