@@ -3,6 +3,7 @@ package linkwarden
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -19,6 +20,15 @@ const sortDateNewestFirst = 0
 // reached the end.
 const PageSize = 50
 
+// errUnexpectedStatus is returned when Linkwarden's HTTP response status
+// isn't 200 OK.
+var errUnexpectedStatus = errors.New("unexpected status from linkwarden")
+
+// errLinkwardenFailure is returned when Linkwarden's own response body
+// reports success: false.
+var errLinkwardenFailure = errors.New("linkwarden reported failure")
+
+// Link is a single saved bookmark, as returned by Linkwarden's search API.
 type Link struct {
 	ID          int        `json:"id"`
 	Name        string     `json:"name"`
@@ -29,10 +39,12 @@ type Link struct {
 	CreatedAt   time.Time  `json:"createdAt"`
 }
 
+// Tag is a label attached to a Link.
 type Tag struct {
 	Name string `json:"name"`
 }
 
+// Collection is the Linkwarden collection a Link belongs to.
 type Collection struct {
 	Name string `json:"name"`
 }
@@ -43,12 +55,15 @@ type searchResponse struct {
 	Message string `json:"message"`
 }
 
+// Client is a Linkwarden API client, scoped to one base URL and access token.
 type Client struct {
 	baseURL string
 	token   string
 	http    *http.Client
 }
 
+// NewClient builds a Client for the Linkwarden instance at baseURL,
+// authenticating with token.
 func NewClient(baseURL, token string) *Client {
 	return &Client{
 		baseURL: baseURL,
@@ -76,21 +91,31 @@ func (c *Client) FetchNewLinks(since time.Time, seenAtSince map[int]bool) ([]Lin
 			return fresh, nil
 		}
 
-		for _, l := range page {
-			if l.CreatedAt.Before(since) {
-				return fresh, nil
-			}
-			if l.CreatedAt.Equal(since) && seenAtSince[l.ID] {
-				continue
-			}
-			fresh = append(fresh, l)
-		}
-
-		if len(page) < PageSize {
+		var stop bool
+		fresh, stop = appendFresh(fresh, page, since, seenAtSince)
+		if stop || len(page) < PageSize {
 			return fresh, nil
 		}
 		cursor += PageSize
 	}
+}
+
+// appendFresh appends the links in page that are newer than since (or, at
+// the exact boundary, not already recorded in seenAtSince) onto fresh. It
+// reports whether page reached a link already synced, meaning the caller
+// should stop paging.
+func appendFresh(fresh, page []Link, since time.Time, seenAtSince map[int]bool) (result []Link, stop bool) {
+	for _, l := range page {
+		if l.CreatedAt.Before(since) {
+			return fresh, true
+		}
+		if l.CreatedAt.Equal(since) && seenAtSince[l.ID] {
+			continue
+		}
+		fresh = append(fresh, l)
+	}
+
+	return fresh, false
 }
 
 func (c *Client) fetchPage(cursor int) ([]Link, error) {
@@ -98,18 +123,20 @@ func (c *Client) fetchPage(cursor int) ([]Link, error) {
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("building request for %s: %w", url, err)
 	}
 	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("requesting %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("linkwarden returned %s for %s", resp.Status, url)
+		return nil, fmt.Errorf("%w: %s for %s", errUnexpectedStatus, resp.Status, url)
 	}
 
 	var parsed searchResponse
@@ -117,7 +144,7 @@ func (c *Client) fetchPage(cursor int) ([]Link, error) {
 		return nil, fmt.Errorf("decoding linkwarden response: %w", err)
 	}
 	if !parsed.Success {
-		return nil, fmt.Errorf("linkwarden reported failure: %s", parsed.Message)
+		return nil, fmt.Errorf("%w: %s", errLinkwardenFailure, parsed.Message)
 	}
 
 	return parsed.Data, nil

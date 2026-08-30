@@ -15,16 +15,17 @@ import (
 // configured with working push credentials.
 func CommitAndPush(vaultPath, subdir string, count int) (string, error) {
 	run := func(args ...string) (string, error) {
-		cmd := exec.Command("git", args...)
+		cmd := exec.Command("git", args...) //nolint:gosec // args are fixed git subcommands assembled internally, not user input
 		cmd.Dir = vaultPath
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			return "", fmt.Errorf("git %v: %w\n%s", args, err, out)
 		}
+
 		return string(out), nil
 	}
 
-	branch := fmt.Sprintf("linkwarden-sync-%s", time.Now().Format("2006-01-02-150405"))
+	branch := "linkwarden-sync-" + time.Now().Format("2006-01-02-150405")
 	if _, err := run("checkout", "-b", branch); err != nil {
 		return "", err
 	}
@@ -40,6 +41,7 @@ func CommitAndPush(vaultPath, subdir string, count int) (string, error) {
 	if status == "" {
 		_, _ = run("checkout", "-")
 		_, _ = run("branch", "-D", branch)
+
 		return "", nil
 	}
 
