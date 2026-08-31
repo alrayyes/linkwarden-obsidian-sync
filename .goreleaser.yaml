@@ -49,6 +49,21 @@ docker_manifests:
       - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-amd64"
       - "ghcr.io/alrayyes/linkwarden-obsidian-sync:{{ .Version }}-arm64"
 
+# deb/rpm only: nfpm's package formats are Linux-only, so goreleaser skips
+# the darwin build from `builds` above on its own — nothing to exclude here.
+nfpms:
+  - package_name: linkwarden-obsidian-sync
+    formats:
+      - deb
+      - rpm
+    maintainer: Ryan Kes <ryan@andthensome.nl>
+    description: >-
+      Keeps a directory of Obsidian notes in sync with your saved
+      Linkwarden links.
+    homepage: https://github.com/alrayyes/linkwarden-obsidian-sync
+    license: GPL-3.0-only
+    bindir: /usr/bin
+
 changelog:
   disable: true
 

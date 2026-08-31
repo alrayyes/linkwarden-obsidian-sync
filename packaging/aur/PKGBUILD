@@ -1,0 +1,25 @@
+# Maintainer: Ryan Kes <ryan@andthensome.nl>
+pkgname=linkwarden-obsidian-sync
+pkgver=2.1.0
+pkgrel=1
+pkgdesc="Keeps a directory of Obsidian notes in sync with your saved Linkwarden links"
+arch=('x86_64' 'aarch64')
+url="https://github.com/alrayyes/linkwarden-obsidian-sync"
+license=('GPL-3.0-only')
+makedepends=('go')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/alrayyes/linkwarden-obsidian-sync/archive/v$pkgver.tar.gz")
+sha256sums=('2d29f3c214457258d16bb3dc442ea1c348128443cc8c522dcee771d9152a55cf')
+
+build() {
+  cd "$pkgname-$pkgver"
+  export CGO_ENABLED=0
+  go build -trimpath -ldflags "-s -w -X main.version=$pkgver" \
+    -o "$pkgname" ./cmd/linkwarden-obsidian-sync
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 "$pkgname" "$pkgdir/usr/bin/$pkgname"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}
