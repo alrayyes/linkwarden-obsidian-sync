@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.3.1...v2.3.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* **ci:** stop racing release-please-action's own PR creation ([#57](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/57)) ([111aba8](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/111aba82a3f6704afd16e329371c250e727bcf62))
+
 ## [2.3.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.3.0...v2.3.1) (2026-08-31)
 
 
