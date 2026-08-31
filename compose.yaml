@@ -9,11 +9,16 @@
 # path regardless, confirmed live against this exact compose file.
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-testpassword}
     restart: unless-stopped
 
+  # Deliberately unpinned, unlike postgres above: the whole point of this
+  # compose file is catching internal/linkwarden's fake drifting from
+  # Linkwarden's actual API (see CONTRIBUTING.md), so it has to track what
+  # Linkwarden currently ships, not a version frozen the day this was
+  # written.
   linkwarden:
     image: ghcr.io/linkwarden/linkwarden:latest
     environment:

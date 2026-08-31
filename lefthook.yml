@@ -24,6 +24,13 @@ pre-commit:
       glob: "Dockerfile"
       run: docker run --rm -i hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d < Dockerfile
 
+    - name: goreleaser-check
+      glob: ".goreleaser.{yml,yaml}"
+      run: >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v "$(pwd):/src" -w /src
+        goreleaser/goreleaser:v2.17.1 check
+
     # Scoped to what the Dockerfile's COPY actually pulls in, so an
     # unrelated commit skips this and stays fast; a Go or Dockerfile
     # change pays for a warm-cache image build to prove it still builds —
@@ -84,6 +91,12 @@ pre-push:
 
     - name: hadolint
       run: docker run --rm -i hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d < Dockerfile
+
+    - name: goreleaser-check
+      run: >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v "$(pwd):/src" -w /src
+        goreleaser/goreleaser:v2.17.1 check
 
     - name: docker-build
       run: >-
