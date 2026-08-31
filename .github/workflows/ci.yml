@@ -127,3 +127,20 @@ jobs:
           su builder -c "cd $workdir && makepkg -f"
           namcap "$workdir/PKGBUILD"
           namcap "$workdir"/*.pkg.tar.*
+
+  # flake.nix is the one packaging format that builds from this checkout
+  # directly (Nix's own git fetcher reads the flake's source straight
+  # from the repo, unlike nfpm/goreleaser building from a Go module or
+  # the AUR PKGBUILD pointing at a release tarball), so nix flake check
+  # here is a real, unmodified build of the actual PR — no swapped-in
+  # tarball needed the way aur-package above needs one.
+  nix-flake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - run: nix flake check
+      - run: nix build .#default
+      - run: ./result/bin/linkwarden-obsidian-sync --help
