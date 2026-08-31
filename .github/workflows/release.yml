@@ -24,6 +24,24 @@ jobs:
         id: release
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
+      # Release pull requests are CLAUDE.md's standing auto-merge
+      # exception: merge once every check is green, no separate ask.
+      # GitHub's own auto-merge does exactly that — waits for every
+      # required status check (branch protection's contexts list, kept in
+      # step with ci.yml's actual jobs) and squash-merges the moment
+      # they're all green — so there's nothing to poll or gate here beyond
+      # enabling it. Looked up by the label release-please applies itself
+      # rather than the action's own pr output, whose shape has changed
+      # across major versions before; a label survives that.
+      - name: enable auto-merge on the release PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -eu
+          pr=$(gh pr list --label "autorelease: pending" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr merge --auto --squash "$pr"
+          fi
 
   goreleaser:
     needs: release-please
