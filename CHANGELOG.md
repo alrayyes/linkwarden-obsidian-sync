@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.2.0...v2.2.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **ci:** use newline-separated globs for attest-build-provenance ([#50](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/50)) ([8c17eae](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/8c17eae1361f794d841e3f8af4b0c2adc5d9cd17))
+
 ## [2.2.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.1.0...v2.2.0) (2026-08-31)
 
 
