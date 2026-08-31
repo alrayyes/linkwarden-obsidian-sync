@@ -25,7 +25,18 @@ linkwarden-obsidian-sync
 
 A prebuilt binary (linux/darwin, amd64/arm64) is on the [latest
 release](https://github.com/alrayyes/linkwarden-obsidian-sync/releases/latest)
-if you'd rather not build with Go, or run it as a container:
+if you'd rather not build with Go. Debian/Ubuntu and Fedora/RHEL users can
+grab a `.deb` or `.rpm` from the same release instead:
+
+```shell
+# Debian/Ubuntu
+sudo dpkg -i linkwarden-obsidian-sync_*_linux_amd64.deb
+
+# Fedora/RHEL
+sudo rpm -i linkwarden-obsidian-sync_*_linux_amd64.rpm
+```
+
+or run it as a container:
 
 ```shell
 docker run --rm \
