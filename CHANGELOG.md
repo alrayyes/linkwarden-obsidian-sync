@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.4.2](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.4.1...v2.4.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* **ci:** diagnose the AUR push failure that survived pinning the host key ([#64](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/64)) ([4e87f4b](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/4e87f4ba20f91269c0dedf5d5eb1f4135acfe870))
+* **release:** disable makepkg's debug package for the AUR build ([#65](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/65)) ([55defb7](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/55defb7eb7d29436b370de6ac7a81fac50290387))
+
 ## [2.4.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.4.0...v2.4.1) (2026-08-31)
 
 
