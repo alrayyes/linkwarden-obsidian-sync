@@ -12,3 +12,4 @@ packaging/aur/*.pkg.tar.*
 # Vale's style packages, downloaded by `vale sync`, not committed.
 /styles/Google/
 /styles/proselint/
+/styles/write-good/

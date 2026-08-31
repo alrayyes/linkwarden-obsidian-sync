@@ -84,7 +84,7 @@
       `VALE_REPORT` piped into `$GITHUB_STEP_SUMMARY` — use this repo's
       own already-pinned `actions/checkout` SHA, not the Forgejo one —
       verify with `actionlint` and a plain YAML parse
-- [ ] 4.2 Add `prose / mechanics` and `prose / style` to branch
+- [x] 4.2 Add `prose / mechanics` and `prose / style` to branch
       protection's required status checks (same API call pattern already
       used for `packages`/`aur-package`/`nix-flake`) — verify via `gh api
       repos/alrayyes/linkwarden-obsidian-sync/branches/main/protection/required_status_checks`
@@ -128,11 +128,20 @@
 
 ## 7. Final verification
 
-- [ ] 7.1 Open the pull request, confirm all CI jobs — including the two
+- [x] 7.1 Open the pull request, confirm all CI jobs — including the two
       new `prose.yml` jobs — pass on the real GitHub Actions runner, not
       just locally
-- [ ] 7.2 Confirm issue #45's acceptance criteria hold against the
+- [x] 7.2 Confirm issue #45's acceptance criteria hold against the
       merged state: a `line-length` violation fails structure; "an
       university"/"the the" fails mechanics; a passive-voice sentence
       warns without failing; `PASSIVE_VOICE` is off in LTeX; CI shows
-      `mechanics` and `style` as separately named checks
+      `mechanics` and `style` as separately named checks.
+
+      This check found a real gap after #70 had already merged (auto-merge
+      fired the moment CI went green, before this check ran): neither
+      Google nor proselint actually has a passive-voice rule — a
+      deliberately passive test sentence got zero Vale findings. Fixed in
+      a follow-up PR adding the `write-good` package (confirmed live:
+      `write-good.Passive` is what LTeX's own disabled `PASSIVE_VOICE`
+      rule was actually standing in for) — see PR history on `main` for
+      both.

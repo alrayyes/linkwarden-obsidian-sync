@@ -10,6 +10,7 @@ ignores:
   # held to somebody else's rules.
   - "styles/Google/**"
   - "styles/proselint/**"
+  - "styles/write-good/**"
   # Claude Code's own local tooling, not this repository's own prose.
   - ".claude/**"
   # A GitHub PR-compose fragment, not a standalone document — deliberately
