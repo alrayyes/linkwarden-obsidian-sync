@@ -1,0 +1,27 @@
+# Prettier is here to fill the gap this repo doesn't otherwise have a
+# formatter for — today that means Markdown and YAML. Everything below is
+# either somebody else's file or a format Prettier has no business
+# reformatting.
+node_modules/
+dist/
+man/
+bun.lock
+go.sum
+
+# Written by the release job, not by hand.
+CHANGELOG.md
+
+# Vale's downloaded style packages.
+styles/Google/
+styles/proselint/
+
+# Claude Code's own local tooling, not this repository's own prose.
+.claude/
+
+# OpenSpec's structured requirement/scenario format is a different kind of
+# writing this pipeline wasn't set up to hold to house style — see
+# openspec/changes/add-markdown-prose-linting/proposal.md.
+openspec/
+
+# A GitHub PR-compose fragment, not a standalone document.
+.github/PULL_REQUEST_TEMPLATE.md

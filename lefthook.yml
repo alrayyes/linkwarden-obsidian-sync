@@ -24,6 +24,32 @@ pre-commit:
       glob: "Dockerfile"
       run: docker run --rm -i hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d < Dockerfile
 
+    # Prettier decides the layout, markdownlint then judges what Prettier
+    # produced — the other order has markdownlint fixing something Prettier
+    # is about to overwrite.
+    - name: prettier
+      glob: "*.{md,yml,yaml}"
+      run: bunx prettier --write {staged_files}
+      stage_fixed: true
+
+    - name: markdownlint
+      glob: "*.md"
+      run: bunx markdownlint-cli2 {staged_files}
+
+    # Fast enough for a commit — Vale itself runs in well under a second.
+    # LTeX is not (~300MB download, ~10s a run even cached), so mechanics
+    # run at push instead, where the wait is paid once rather than per
+    # commit. Bare invocation, no --minAlertLevel flag: a warning-only
+    # finding exits 0 (confirmed live), so this only fails on the same
+    # error-level findings pre-push's more careful two-pass script does.
+    - name: vale
+      glob: "*.md"
+      exclude:
+        - "CHANGELOG.md"
+        - "openspec/**"
+        - ".github/PULL_REQUEST_TEMPLATE.md"
+      run: vale {staged_files}
+
     - name: goreleaser-check
       glob: ".goreleaser.{yml,yaml}"
       run: >-
@@ -97,6 +123,27 @@ pre-push:
         docker run --rm --user "$(id -u):$(id -g)"
         -v "$(pwd):/src" -w /src
         goreleaser/goreleaser:v2.17.1 check
+
+    # package.json scripts rather than the commands spelled out, because CI
+    # runs the same ones and a literal copied into two files drifts the
+    # first time somebody edits one of them.
+    - name: prettier
+      run: bun run format:check
+
+    - name: markdownlint
+      run: bun run lint:md
+
+    # Whole-tree, not staged-only — pre-commit's vale job only ever sees
+    # staged files, so this is the first point anything catches a style
+    # issue in a file nobody touched this commit.
+    - name: vale
+      run: bun run lint:prose
+
+    # Grammar and spelling. Left out of pre-commit on the grounds that it's
+    # a ~300MB download, which it is — but it caches outside the repository
+    # and then costs about ten seconds.
+    - name: mechanics
+      run: bun run lint:mechanics
 
     - name: docker-build
       run: >-

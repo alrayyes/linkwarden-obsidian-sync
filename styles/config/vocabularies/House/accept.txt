@@ -1,0 +1,31 @@
+# Product and tool names, spelled the way their owners spell them. Vale.Terms
+# holds the prose to exactly these, so casing here is the casing everywhere.
+Linkwarden
+[Ll]inkwarden's
+linkwarden-obsidian-sync
+Codecov
+hadolint
+Dockerfile
+commitlint
+lefthook
+toolchain
+Postgres
+Meilisearch
+nixpkgs
+frontmatter
+systemd
+PKGBUILD
+NextAuth
+golangci-lint
+
+# Ordinary technical vocabulary, not product names, but real words this
+# repository's prose uses constantly and Vale's own dictionary doesn't know.
+config
+repo
+repo's
+env
+enum
+resync
+CVEs
+CI
+commit's
