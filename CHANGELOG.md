@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.4.2...v2.5.0) (2026-08-31)
+
+
+### Features
+
+* **release:** add a Nix flake ([#68](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/68)) ([ca6dae8](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/ca6dae8fee5c722a01a30516353e8da88f012d9b))
+
 ## [2.4.2](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.4.1...v2.4.2) (2026-08-31)
 
 
