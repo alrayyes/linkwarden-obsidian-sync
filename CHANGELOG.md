@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.3.0...v2.3.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **ci:** give the auto-merge step an explicit repo context ([#55](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/55)) ([b4f2ba3](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/b4f2ba33029fb311d9537591fe01c6dd84d3144c))
+
 ## [2.3.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.2.1...v2.3.0) (2026-08-31)
 
 
