@@ -3,6 +3,10 @@ version: 2
 before:
   hooks:
     - go mod tidy
+    - go run -tags mangen ./cmd/linkwarden-obsidian-sync man
+    # nfpm doesn't compress man pages itself, unlike makepkg's own tidy
+    # step for the AUR package below — Debian policy expects them gzipped.
+    - sh -c "gzip -kf man/*.1"
 
 builds:
   - main: ./cmd/linkwarden-obsidian-sync
@@ -63,6 +67,11 @@ nfpms:
     homepage: https://github.com/alrayyes/linkwarden-obsidian-sync
     license: GPL-3.0-only
     bindir: /usr/bin
+    contents:
+      - src: man/linkwarden-obsidian-sync.1.gz
+        dst: /usr/share/man/man1/linkwarden-obsidian-sync.1.gz
+      - src: man/linkwarden-obsidian-sync-init.1.gz
+        dst: /usr/share/man/man1/linkwarden-obsidian-sync-init.1.gz
 
 changelog:
   disable: true
