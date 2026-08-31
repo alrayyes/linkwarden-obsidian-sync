@@ -12,6 +12,9 @@
   its note's filename.
 - `internal/reconcile` — the add/update/remove diff between what
   Linkwarden has now and what the vault had last run.
+- `packaging/aur` — the AUR `PKGBUILD`, built and pushed by hand
+  (`makepkg -si` to verify, then `git push` to the AUR git repo) rather
+  than from CI, since publishing there needs an AUR account's own SSH key.
 
 ## Running tests
 
