@@ -36,6 +36,7 @@ jobs:
       - name: enable auto-merge on the release PR
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -eu
           pr=$(gh pr list --label "autorelease: pending" --state open --json number --jq '.[0].number // empty')
