@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.5.0...v2.6.0) (2026-08-31)
+
+
+### Features
+
+* add markdown/prose linting pipeline ([#70](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/70)) ([80384af](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/80384afc5d2b75e9bfef65f75fe1ed9bdf0a4380))
+
 ## [2.5.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.4.2...v2.5.0) (2026-08-31)
 
 
