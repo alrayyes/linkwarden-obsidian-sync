@@ -14,6 +14,7 @@ CHANGELOG.md
 # Vale's downloaded style packages.
 styles/Google/
 styles/proselint/
+styles/write-good/
 
 # Claude Code's own local tooling, not this repository's own prose.
 .claude/
