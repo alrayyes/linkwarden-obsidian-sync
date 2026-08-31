@@ -30,19 +30,21 @@ jobs:
       # required status check (branch protection's contexts list, kept in
       # step with ci.yml's actual jobs) and squash-merges the moment
       # they're all green — so there's nothing to poll or gate here beyond
-      # enabling it. Looked up by the label release-please applies itself
-      # rather than the action's own pr output, whose shape has changed
-      # across major versions before; a label survives that.
+      # enabling it.
+      #
+      # Read off the action's own prs_created/pr outputs, not a
+      # gh pr list --label lookup: that raced release-please-action's own
+      # PR creation and lost, confirmed live — the label was on the PR by
+      # the time anyone looked, just not yet by the time this step's
+      # `gh pr list` query ran a few hundred ms after the PR was created
+      # in the same job. The action's outputs carry the PR it just
+      # created directly, with no separate query to race.
       - name: enable auto-merge on the release PR
+        if: steps.release.outputs.prs_created == 'true'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: |
-          set -eu
-          pr=$(gh pr list --label "autorelease: pending" --state open --json number --jq '.[0].number // empty')
-          if [ -n "$pr" ]; then
-            gh pr merge --auto --squash "$pr"
-          fi
+        run: gh pr merge --auto --squash ${{ fromJSON(steps.release.outputs.pr).number }}
 
   goreleaser:
     needs: release-please
