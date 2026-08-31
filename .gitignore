@@ -8,3 +8,7 @@ packaging/aur/src/
 packaging/aur/pkg/
 packaging/aur/*.tar.gz
 packaging/aur/*.pkg.tar.*
+
+# Vale's style packages, downloaded by `vale sync`, not committed.
+/styles/Google/
+/styles/proselint/

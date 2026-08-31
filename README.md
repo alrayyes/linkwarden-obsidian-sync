@@ -1,6 +1,6 @@
 # linkwarden-obsidian-sync
 
-[![ci](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml/badge.svg)](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml)
+[![CI](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml/badge.svg)](https://github.com/alrayyes/linkwarden-obsidian-sync/actions/workflows/ci.yml)
 [![Codecov](https://codecov.io/gh/alrayyes/linkwarden-obsidian-sync/graph/badge.svg)](https://codecov.io/gh/alrayyes/linkwarden-obsidian-sync)
 [![release](https://img.shields.io/github/v/release/alrayyes/linkwarden-obsidian-sync)](https://github.com/alrayyes/linkwarden-obsidian-sync/releases)
 [![Go Reference](https://pkg.go.dev/badge/github.com/alrayyes/linkwarden-obsidian-sync.svg)](https://pkg.go.dev/github.com/alrayyes/linkwarden-obsidian-sync)
@@ -26,9 +26,9 @@ linkwarden-obsidian-sync
 See **[docs/INSTALL.md](docs/INSTALL.md)** for every other way to get the
 binary: a prebuilt release archive, `.deb`, `.rpm`, the AUR, or Docker.
 
-See **[docs/USAGE.md](docs/USAGE.md)** for exactly what gets added, updated
-and removed on a run (with examples), the full configuration reference, and
-the state file's shape.
+See **[docs/USAGE.md](docs/USAGE.md)** for exactly what gets added,
+updated, and removed on a run (with examples), the full configuration
+reference, and the state file's shape.
 
 ## Testing
 

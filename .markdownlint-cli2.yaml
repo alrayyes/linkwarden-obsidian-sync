@@ -1,0 +1,34 @@
+# Markdown this repo owns. Broken structure — a skipped heading level, a
+# dead link — is exactly the sort of thing nobody notices while writing it.
+globs:
+  - "**/*.md"
+
+ignores:
+  - CHANGELOG.md # written by the release job, not by hand
+  - "**/node_modules/**"
+  # Vale's style packages, downloaded by `vale sync`. Somebody else's docs,
+  # held to somebody else's rules.
+  - "styles/Google/**"
+  - "styles/proselint/**"
+  # Claude Code's own local tooling, not this repository's own prose.
+  - ".claude/**"
+  # A GitHub PR-compose fragment, not a standalone document — deliberately
+  # terse with no H1, per skills/pull-request's own convention.
+  - ".github/PULL_REQUEST_TEMPLATE.md"
+  # OpenSpec's structured requirement/scenario format reads nothing like
+  # this repo's own docs voice — a different kind of writing this pipeline
+  # wasn't set up to hold to house style. Out of scope for this change
+  # (see openspec/changes/add-markdown-prose-linting/proposal.md).
+  - "openspec/**"
+
+config:
+  # markdownlint/style/prettier drops MD013 because Prettier reflows prose on
+  # proseWrap "always"/"never" — this repo runs "preserve", so Prettier never
+  # moves a line break and the check is still worth having. Re-enabled under
+  # its alias, never under MD013, or the inherited `line-length: false` wins.
+  line-length:
+    line_length: 80
+    tables: false
+    code_blocks: false
+
+extends: "markdownlint/style/prettier"
