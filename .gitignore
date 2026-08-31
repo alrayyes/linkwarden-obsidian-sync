@@ -3,6 +3,7 @@
 /man/
 /coverage.out
 /node_modules/
+/result
 packaging/aur/src/
 packaging/aur/pkg/
 packaging/aur/*.tar.gz

@@ -1,7 +1,7 @@
 # Installation
 
 Pick whichever fits how you already manage software on the machine that'll
-run this. All five install the same binary; none of them need a Go
+run this. All six install the same binary; none of them need a Go
 toolchain except the first.
 
 ## go install
@@ -62,6 +62,17 @@ against the tagged release; there's no `-git` variant. The
 [PKGBUILD](https://aur.archlinux.org/packages/linkwarden-obsidian-sync)
 tracks each GitHub release automatically — `packaging/aur/` in this repo
 is the template it's generated from.
+
+## Nix / NixOS
+
+```shell
+nix run github:alrayyes/linkwarden-obsidian-sync
+```
+
+Or add it as a flake input, or `nix profile install
+github:alrayyes/linkwarden-obsidian-sync` to install it into your profile.
+Builds straight from this repo's own `flake.nix` with `buildGoModule` —
+no nixpkgs submission, so nothing to wait on there.
 
 ## Docker
 
