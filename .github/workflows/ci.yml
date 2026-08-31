@@ -17,7 +17,9 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go build ./...
+      - run: go build -tags mangen ./...
       - run: go vet ./...
+      - run: go vet -tags mangen ./...
       - run: gofmt -l . | (! grep .)
       - run: go mod tidy -diff
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
@@ -50,3 +52,78 @@ jobs:
       # goreleaser's `dockers:` block hands it at release time.
       - run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o linkwarden-obsidian-sync ./cmd/linkwarden-obsidian-sync
       - run: docker build -t linkwarden-obsidian-sync:ci .
+
+  # A goreleaser run finishing is not the same claim as the packages it
+  # produced actually installing and running — this proves the latter for
+  # every format nfpms/the AUR PKGBUILD build, not just the .tar.gz the
+  # other jobs already exercise via a plain `go build`.
+  packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          version: v2.17.1
+          args: release --snapshot --clean --skip=docker,sign,publish,announce
+      # ubuntu-latest is Debian-based, so dpkg -i runs natively — a real
+      # install, not just extracting the .deb and running what's inside.
+      - name: install and run the .deb
+        run: |
+          set -eu
+          sudo dpkg -i dist/*_linux_amd64.deb
+          linkwarden-obsidian-sync --help
+          zcat /usr/share/man/man1/linkwarden-obsidian-sync.1.gz | grep -q "Keep a directory"
+          zcat /usr/share/man/man1/linkwarden-obsidian-sync-init.1.gz | grep -q "Write a template"
+      # No native rpm tooling on a Debian-based runner, so this one runs
+      # inside Fedora instead.
+      - name: install and run the .rpm
+        run: |
+          docker run --rm -v "$PWD/dist:/dist:ro" fedora:41@sha256:f1a3fab47bcb3c3ddf3135d5ee7ba8b7b25f2e809a47440936212a3a50957f3d sh -c '
+            set -eu
+            rpm -i /dist/*_linux_amd64.rpm
+            linkwarden-obsidian-sync --help
+            zcat /usr/share/man/man1/linkwarden-obsidian-sync.1.gz | grep -q "Keep a directory"
+          '
+
+  # makepkg refuses to run as root and Arch's own packaging tools only
+  # exist in an Arch container, so this is its own job rather than folded
+  # into packages above. The PKGBUILD itself stays pointed at the real
+  # GitHub release tarball for actual AUR consumers (packaging/aur's own
+  # comment in CONTRIBUTING.md); testing it here against a release that
+  # doesn't exist yet for this branch would just fail on every PR, so this
+  # swaps in a tarball of the current commit and re-points source/
+  # sha256sums at it before building — everything else in the PKGBUILD,
+  # build() and package() included, runs unmodified.
+  aur-package:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel@sha256:68bfc3b0d277b08a99101dc9b94aaa03e5ae70cf1b4fb965c03b2b87b915760d
+    steps:
+      - run: pacman -Syu --noconfirm git go namcap
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # This job's container runs as root, so actions/checkout's own
+      # dubious-ownership workaround never reaches this step's later git
+      # commands — see rules/tooling.md's "git inside a container-as-root
+      # job".
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: build and verify the AUR package against this commit
+        run: |
+          set -eu
+          useradd -m builder
+          workdir=/tmp/aur-ci
+          mkdir -p "$workdir"
+          pkgver=$(sed -n 's/^pkgver=//p' packaging/aur/PKGBUILD)
+          tarball="$workdir/linkwarden-obsidian-sync-$pkgver.tar.gz"
+          git archive --prefix="linkwarden-obsidian-sync-$pkgver/" -o "$tarball" HEAD
+          sha256=$(sha256sum "$tarball" | cut -d' ' -f1)
+          sed \
+            -e "s#^source=.*#source=(\"linkwarden-obsidian-sync-$pkgver.tar.gz\")#" \
+            -e "s#^sha256sums=.*#sha256sums=('$sha256')#" \
+            packaging/aur/PKGBUILD > "$workdir/PKGBUILD"
+          chown -R builder "$workdir"
+          su builder -c "cd $workdir && makepkg -f"
+          namcap "$workdir/PKGBUILD"
+          namcap "$workdir"/*.pkg.tar.*

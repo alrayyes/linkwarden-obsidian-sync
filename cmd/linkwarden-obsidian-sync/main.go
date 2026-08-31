@@ -38,12 +38,6 @@ const (
 // off the tag release-please creates. Unset in a `go build` or `go run`.
 var version = "dev"
 
-func main() {
-	if err := newRootCmd().Execute(); err != nil {
-		log.Fatal(err)
-	}
-}
-
 // newRootCmd builds the command tree: the root command runs the sync,
 // `init` writes a template config file. Split out of main so tests can
 // exercise it without going through os.Exit.

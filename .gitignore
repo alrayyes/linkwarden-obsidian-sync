@@ -1,5 +1,6 @@
 /linkwarden-obsidian-sync
 /dist/
+/man/
 /coverage.out
 /node_modules/
 packaging/aur/src/
