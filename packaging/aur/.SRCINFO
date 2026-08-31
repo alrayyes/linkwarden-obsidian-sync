@@ -7,6 +7,7 @@ pkgbase = linkwarden-obsidian-sync
 	arch = aarch64
 	license = GPL-3.0-only
 	makedepends = go
+	options = !debug
 	source = linkwarden-obsidian-sync-2.1.0.tar.gz::https://github.com/alrayyes/linkwarden-obsidian-sync/archive/v2.1.0.tar.gz
 	sha256sums = 2d29f3c214457258d16bb3dc442ea1c348128443cc8c522dcee771d9152a55cf
 
