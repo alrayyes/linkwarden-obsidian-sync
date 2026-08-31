@@ -106,3 +106,79 @@ jobs:
           subject-name: ghcr.io/${{ github.repository }}
           subject-digest: ${{ steps.digests.outputs.arm64 }}
           push-to-registry: true
+
+  # makepkg refuses to run as root, and packaging/aur/PKGBUILD's committed
+  # pkgver is a template, not kept in sync with every release (bumping it
+  # would mean this job committing back to main, which CLAUDE.md's release
+  # exception explicitly doesn't license beyond the version/CHANGELOG.md
+  # commit release-please itself makes) — so this job substitutes the
+  # released version and checksum in memory, builds and verifies the
+  # result, and pushes only to the separate AUR repo. Nothing here ever
+  # touches this repo's own git history.
+  aur-publish:
+    needs: [release-please, goreleaser]
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel@sha256:68bfc3b0d277b08a99101dc9b94aaa03e5ae70cf1b4fb965c03b2b87b915760d
+    steps:
+      - run: pacman -Syu --noconfirm git openssh curl go namcap
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+      # This job's container runs as root, so actions/checkout's own
+      # dubious-ownership workaround never reaches this step's later git
+      # commands — see rules/tooling.md's "git inside a container-as-root
+      # job".
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: build the release PKGBUILD and verify it
+        run: |
+          set -eu
+          version="${{ needs.release-please.outputs.tag_name }}"
+          version="${version#v}"
+          tarball_url="https://github.com/${{ github.repository }}/archive/${{ needs.release-please.outputs.tag_name }}.tar.gz"
+          sha256=$(curl -sL "$tarball_url" | sha256sum | cut -d' ' -f1)
+          workdir=/tmp/aur-release
+          mkdir -p "$workdir"
+          sed \
+            -e "s/^pkgver=.*/pkgver=$version/" \
+            -e "s/^pkgrel=.*/pkgrel=1/" \
+            -e "s/^sha256sums=.*/sha256sums=('$sha256')/" \
+            packaging/aur/PKGBUILD > "$workdir/PKGBUILD"
+          useradd -m builder
+          chown -R builder "$workdir"
+          # A real makepkg build against the released tarball, not just a
+          # syntax check — packaging/aur's own comment in CONTRIBUTING.md
+          # says this gets proven before it's ever pushed to AUR, and this
+          # is that proof, every release, not just when someone remembers
+          # to check by hand.
+          su builder -c "cd $workdir && makepkg --printsrcinfo > .SRCINFO && makepkg -f"
+          namcap "$workdir/PKGBUILD"
+          namcap "$workdir"/*.pkg.tar.*
+      - name: push to the AUR
+        env:
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          set -eu
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_KEY" > ~/.ssh/aur_ed25519
+          chmod 600 ~/.ssh/aur_ed25519
+          ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/aur_ed25519 -o IdentitiesOnly=yes"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          aurdir=$(mktemp -d)
+          if ! git clone ssh://aur@aur.archlinux.org/linkwarden-obsidian-sync.git "$aurdir"; then
+            echo "clone failed — expected on the first-ever publish, since AUR has nothing at this path yet; initializing a fresh repo instead"
+            git init "$aurdir"
+            git -C "$aurdir" remote add origin ssh://aur@aur.archlinux.org/linkwarden-obsidian-sync.git
+          fi
+          cp /tmp/aur-release/PKGBUILD /tmp/aur-release/.SRCINFO "$aurdir/"
+          cd "$aurdir"
+          git add PKGBUILD .SRCINFO
+          if git diff --cached --quiet; then
+            echo "no AUR changes for this release"
+            exit 0
+          fi
+          git commit -m "release ${{ needs.release-please.outputs.tag_name }}"
+          git push origin HEAD:master
