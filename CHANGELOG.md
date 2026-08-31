@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.1.0...v2.2.0) (2026-08-31)
+
+
+### Features
+
+* **release:** add .deb/.rpm packaging and an AUR PKGBUILD ([#48](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/48)) ([a35f282](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/a35f282c10f960b01baf8289db63ad959c7a1a8e))
+
 ## [2.1.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.0.0...v2.1.0) (2026-08-30)
 
 
