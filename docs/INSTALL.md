@@ -91,5 +91,5 @@ linkwarden-obsidian-sync init   # writes a config template and tells you where
 linkwarden-obsidian-sync
 ```
 
-See [docs/USAGE.md](USAGE.md) for what gets added, updated and removed on
+See [docs/USAGE.md](USAGE.md) for what gets added, updated, and removed on
 a run, the full configuration reference, and the state file's shape.

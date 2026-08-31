@@ -58,7 +58,7 @@ $ find ~/Documents/obsidian/Linkwarden -type f
 
 `Effective Go.md` is gone (its link was deleted); `Go by Example.md` was
 renamed to `Go by Example, Annotated.md` (the link's title changed); `A New
-Article.md` is the newly-saved link.
+Article.md` is the newly saved link.
 
 ## Example note
 
@@ -107,12 +107,12 @@ state_dir = "/home/alrayyes/.local/state/linkwarden-obsidian-sync"
 ```
 
 | Key                | Required | Default                                    |
-| ------------------ | -------- | ------------------------------------------- |
-| `linkwarden_url`   | yes      | —                                             |
-| `linkwarden_token` | yes      | —                                             |
-| `vault_path`       | no       | `~/Documents/obsidian`                        |
-| `vault_subdir`     | no       | `Linkwarden`                                  |
-| `state_dir`        | no       | `$XDG_STATE_HOME/linkwarden-obsidian-sync`    |
+| ------------------ | -------- | ------------------------------------------ |
+| `linkwarden_url`   | yes      | —                                          |
+| `linkwarden_token` | yes      | —                                          |
+| `vault_path`       | no       | `~/Documents/obsidian`                     |
+| `vault_subdir`     | no       | `Linkwarden`                               |
+| `state_dir`        | no       | `$XDG_STATE_HOME/linkwarden-obsidian-sync` |
 
 Every key can also be set via the environment variable of the same shape —
 `LINKWARDEN_URL`, `LINKWARDEN_TOKEN`, `VAULT_PATH`, `VAULT_SUBDIR`,
@@ -134,7 +134,7 @@ fails with the same error `init` points you at, rather than hanging.
 
 ## State
 
-`state_dir/last-synced.json` maps every currently-known link's ID to its
+`state_dir/last-synced.json` maps every currently known link's ID to its
 note's current filename:
 
 ```json

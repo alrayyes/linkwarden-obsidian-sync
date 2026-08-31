@@ -8,7 +8,7 @@
 - `internal/linkwarden` — the Linkwarden API client and pagination logic.
 - `internal/note` — turning a link into a markdown note, writing it, and
   removing it.
-- `internal/state` — the on-disk marker of every currently-known link and
+- `internal/state` — the on-disk marker of every currently known link and
   its note's filename.
 - `internal/reconcile` — the add/update/remove diff between what
   Linkwarden has now and what the vault had last run.
@@ -47,13 +47,18 @@ proves it still works, which hadolint alone never checks.
 ## Getting set up
 
 - **Go**, version matching the `go` directive in `go.mod`.
-- **[bun](https://bun.sh)**, for the tooling that isn't Go — commitlint and
+- **[bun](https://bun.sh)**, for the tooling that isn't Go — commitlint,
+  [Prettier](https://prettier.io) and
+  [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2), and
   the [lefthook](https://lefthook.dev) that runs the git hooks. There's a
   `package.json`, but nothing here is JavaScript; it exists only so those
   tools resolve and stay pinned.
 - **[Docker](https://docker.com)**, which the hooks use to run `gofmt`,
   `golangci-lint` and `go test` at a pinned version rather than whatever the
   host toolchain happens to have, and to build/lint the `Dockerfile` itself.
+- **[Vale](https://vale.sh)**, installed separately (your package manager
+  probably has it, or `go install github.com/errata-ai/vale/v3/cmd/vale`) —
+  a standalone Go binary, not something `bunx` can resolve.
 
 One command installs the tooling and the git hooks:
 
@@ -65,10 +70,33 @@ An uninstalled hook silently does nothing, which is worse than not having
 one, so the `prepare` script runs `lefthook install` for you. You find out
 at the pipeline otherwise, not at the commit.
 
+### Prose and docs linting
+
+README.md, CONTRIBUTING.md, SECURITY.md, docs/USAGE.md and docs/INSTALL.md
+are linted the same way the code is, across four tiers: Prettier (layout),
+markdownlint-cli2 (structure), Vale (style — a warning, never a hook
+failure) and ltex-cli-plus (grammar and spelling — a real failure, exit
+code 3). `scripts/lint-prose.sh` and `scripts/lint-mechanics.sh` are what
+the hooks and CI both actually run, so there's one place to look, not two
+that can drift.
+
+The first `pre-push` (or `bun run lint:mechanics`) downloads
+`ltex-ls-plus`, which ships its own JDK: about 300 MB, once per machine,
+cached under `$XDG_CACHE_HOME` afterwards. A run over this repo's docs
+takes about ten seconds once that's cached.
+
+This repo's own jargon — product names, tool names, words spell-checkers
+don't know — lives in two places, and a new term usually needs both:
+`styles/config/vocabularies/House/accept.txt` for Vale,
+`.ltex.json`'s `ltex.dictionary.en-GB` for LTeX. Each tool keeps its own
+dictionary and neither reads the other's, so a term missing from one still
+fails the tier that doesn't know it.
+
 ## Testing against a real Linkwarden instance
 
-`internal/linkwarden`'s tests run against an `httptest` fake modeling
-Linkwarden's actual `/api/v1/search` contract — but a fake can drift from
+`internal/linkwarden`'s tests run against a fake, built on Go's `httptest`
+package, modelling Linkwarden's actual `/api/v1/search` contract — but a
+fake can drift from
 the real thing (it happened once already: the response shape and cursor
 pagination scheme were both wrong until a real instance caught it). To
 check the fake — or a suspected API-shape bug — against reality:
