@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.0...v2.6.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* add write-good for actual passive-voice detection ([#72](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/72)) ([7e1a846](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/7e1a846bd333df7363a514d7381b572178cdeac1))
+
 ## [2.6.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.5.0...v2.6.0) (2026-08-31)
 
 
