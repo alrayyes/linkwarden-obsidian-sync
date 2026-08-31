@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.2.1...v2.3.0) (2026-08-31)
+
+
+### Features
+
+* **release:** generate and package man pages ([#52](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/52)) ([d08b0a1](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/d08b0a14540309ac28c639f468a8605421c68a5a))
+
 ## [2.2.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.2.0...v2.2.1) (2026-08-31)
 
 
