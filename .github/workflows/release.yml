@@ -139,7 +139,7 @@ jobs:
           version="${{ needs.release-please.outputs.tag_name }}"
           version="${version#v}"
           tarball_url="https://github.com/${{ github.repository }}/archive/${{ needs.release-please.outputs.tag_name }}.tar.gz"
-          sha256=$(curl -sL "$tarball_url" | sha256sum | cut -d' ' -f1)
+          sha256=$(curl -sfL "$tarball_url" | sha256sum | cut -d' ' -f1)
           workdir=/tmp/aur-release
           mkdir -p "$workdir"
           sed \
