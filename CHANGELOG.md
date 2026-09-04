@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.2](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.1...v2.6.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* fail loudly on a bad AUR tarball fetch instead of hashing the error page ([#79](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/79)) ([9fcf507](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/9fcf50759b7f87429cb72bc3fe4ed690c58c8e42)), closes [#78](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/78)
+
 ## [2.6.1](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.0...v2.6.1) (2026-08-31)
 
 
