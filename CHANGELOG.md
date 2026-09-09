@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.3](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.2...v2.6.3) (2026-09-09)
+
+
+### Bug Fixes
+
+* **ci:** don't fail Dependabot PRs on a tokenless Codecov upload ([#87](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/87)) ([eea5a00](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/eea5a002b505b82e32a41262621046d133cec09f))
+
 ## [2.6.2](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.1...v2.6.2) (2026-09-04)
 
 
