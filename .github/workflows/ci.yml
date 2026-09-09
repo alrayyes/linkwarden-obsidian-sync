@@ -39,7 +39,14 @@ jobs:
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
+          # A Dependabot PR doesn't get repo secrets by default (GitHub's own
+          # restriction, not a misconfiguration here) - CODECOV_TOKEN is empty
+          # on that run, and this repo's branch protection makes Codecov
+          # refuse a tokenless upload ("Token required because branch is
+          # protected"). That's an upload hiccup on an unprivileged run, not
+          # a real test regression - true here would fail every Dependabot
+          # PR's CI on that basis alone (confirmed live on #85/#86).
+          fail_ci_if_error: false
 
   docker:
     runs-on: ubuntu-latest
