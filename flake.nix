@@ -37,7 +37,7 @@
           # as "got". No command computes it standalone — it's derived
           # from a real build attempt, same as goreleaser and the AUR
           # PKGBUILD both need a real build to prove their own inputs.
-          vendorHash = "sha256-ZCawIMsmkdNJCA9znR7tHVLgmNUyO9gCWhi6xYU/+lM=";
+          vendorHash = "sha256-NfU0fG4ewwwQhmVCuwJRycQJ6hOwXNGnfCKTqLFNtHI=";
           subPackages = [ "cmd/linkwarden-obsidian-sync" ];
           # Matches goreleaser's own ldflags in .goreleaser.yaml, other
           # than the version source: goreleaser reads it off the tag,
