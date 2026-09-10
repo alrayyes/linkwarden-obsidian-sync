@@ -33,7 +33,11 @@ jobs:
         with:
           version: v2.17.1
           args: check
-      - run: go test ./... -race -coverprofile=coverage.out
+      # gotestsum wraps go test for the JUnit report Test Analytics needs,
+      # on top of the same human-readable output go test already gave.
+      - run: >-
+          go tool gotestsum --junitfile junit.xml --
+          ./... -race -coverprofile=coverage.out
       - run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
@@ -46,6 +50,14 @@ jobs:
           # protected"). That's an upload hiccup on an unprivileged run, not
           # a real test regression - true here would fail every Dependabot
           # PR's CI on that basis alone (confirmed live on #85/#86).
+          fail_ci_if_error: false
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          report-type: test_results
+          files: junit.xml
           fail_ci_if_error: false
 
   docker:
