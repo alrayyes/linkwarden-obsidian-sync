@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.4](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.3...v2.6.4) (2026-09-10)
+
+
+### Bug Fixes
+
+* **ci:** report_type, not report-type ([#91](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/91)) ([1d8fe54](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/1d8fe5439d288b69370df5b7010589fe8dcfd3c3))
+
 ## [2.6.3](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.2...v2.6.3) (2026-09-09)
 
 
