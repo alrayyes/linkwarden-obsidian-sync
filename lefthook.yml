@@ -91,21 +91,21 @@ pre-push:
   parallel: true
   jobs:
     - name: golangci-lint
-      # Pinned to the same v2.13.0 ci.yml's golangci-lint-action uses, so the
+      # Pinned to the same v2.14.0 ci.yml's golangci-lint-action uses, so the
       # hook and CI can't drift.
       #
       # Not rules/go-lint.md's own v2.12.2 example: v2.12.2 is built with
       # go1.26, which refuses to load config against this repo's go 1.27.2
       # directive ("the Go language version used to build golangci-lint is
       # lower than the targeted Go version") — confirmed live, the exact
-      # failure mode that rule's own reasoning warns about. v2.13.0 is built
+      # failure mode that rule's own reasoning warns about. v2.14.0 is built
       # with go1.27.0 or later.
       run: >-
         docker run --rm --user "$(id -u):$(id -g)"
         -v "$(pwd):/src" -w /src
         -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
         -e GOLANGCI_LINT_CACHE=/cache -v "$HOME/.cache/golangci-lint-docker:/cache"
-        golangci/golangci-lint:v2.13.0 golangci-lint run ./...
+        golangci/golangci-lint:v2.14.0 golangci-lint run ./...
 
     - name: test
       run: >-
