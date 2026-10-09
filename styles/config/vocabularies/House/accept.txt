@@ -29,3 +29,5 @@ resync
 CVEs
 CI
 commit's
+JUnit
+Cobertura
