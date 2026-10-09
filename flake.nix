@@ -19,7 +19,7 @@
         version = if (self ? shortRev) then self.shortRev else "dev";
 
         # nixpkgs-unstable's default `go` (1.26 as of writing) is older
-        # than the go 1.27.0 directive in go.mod, and GOTOOLCHAIN can't
+        # than the go 1.27.2 directive in go.mod, and GOTOOLCHAIN can't
         # reach the network to fetch a newer one inside Nix's sandboxed
         # build — go_1_27 is nixpkgs' own matching package instead.
         # Passing `go` as a plain buildGoModule argument is silently
