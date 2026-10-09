@@ -6,9 +6,53 @@ updates:
       interval: weekly
     commit-message:
       prefix: fix
+    groups:
+      gomod:
+        update-types: [minor, patch]
+      gomod-major:
+        update-types: [major]
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: fix
+    groups:
+      docker:
+        update-types: [minor, patch]
+      docker-major:
+        update-types: [major]
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      docker-compose:
+        update-types: [minor, patch]
+      docker-compose-major:
+        update-types: [major]
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+    groups:
+      bun:
+        update-types: [minor, patch]
+      bun-major:
+        update-types: [major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     commit-message:
       prefix: ci
+    groups:
+      github-actions:
+        update-types: [minor, patch]
+      github-actions-major:
+        update-types: [major]
