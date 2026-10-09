@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.6.5](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.4...v2.6.5) (2026-10-09)
+
+
+### Bug Fixes
+
+* build on go 1.27.2 to clear the standard library advisories ([404c17e](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/404c17ef1a65d0c3070f0f00db767583f4dea7f5))
+* build on go 1.27.2 to clear the standard library advisories ([bf7869c](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/bf7869c686848f75b5483d70e4a40fc07889d447))
+* Bump golang.org/x/term from 0.45.0 to 0.46.0 ([#94](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/94)) ([944c730](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/944c73062f41696c9f249ccbea40237d78ca5431))
+
 ## [2.6.4](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.3...v2.6.4) (2026-09-10)
 
 
