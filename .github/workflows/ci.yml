@@ -70,6 +70,20 @@ jobs:
           files: junit.xml
           fail_ci_if_error: false
 
+  # bun.lock only pins dev tooling (commitlint, lefthook, prettier,
+  # markdownlint), but an advisory in it still runs on every contributor's
+  # machine. The bun version comes from package.json's packageManager so CI
+  # and the lockfile agree; the advisory database differs between bun
+  # versions, so a local run on a newer bun can report more than this does.
+  bun-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+      - run: bun audit
+
   docker:
     runs-on: ubuntu-latest
     steps:
