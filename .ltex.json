@@ -14,6 +14,8 @@
       "NextAuth",
       "ci",
       "Codecov",
+      "Cobertura",
+      "JUnit",
       "PKGBUILD",
       "nixpkgs",
       "frontmatter",

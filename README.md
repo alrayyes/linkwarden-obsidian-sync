@@ -39,3 +39,14 @@ go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for testing against a real
 Linkwarden instance via `compose.yaml`.
+
+## Reports
+
+Every push to `main` publishes the latest results:
+
+- Test results, as JUnit XML: [unit.xml](https://apis.ryankes.eu/linkwarden-obsidian-sync/reports/tests/unit.xml)
+- HTML view of the coverage: [coverage](https://apis.ryankes.eu/linkwarden-obsidian-sync/reports/coverage/)
+- Cobertura XML: [coverage.xml](https://apis.ryankes.eu/linkwarden-obsidian-sync/reports/coverage/coverage.xml)
+
+The [index](https://apis.ryankes.eu/linkwarden-obsidian-sync/reports/) lists
+them with the commit and date.

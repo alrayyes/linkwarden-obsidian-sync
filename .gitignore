@@ -2,6 +2,8 @@
 /dist/
 /man/
 /coverage.out
+/junit.xml
+/site/
 /node_modules/
 /result
 packaging/aur/src/
