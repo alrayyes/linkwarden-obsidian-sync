@@ -25,7 +25,18 @@
         # Passing `go` as a plain buildGoModule argument is silently
         # ignored; it has to go through .override, confirmed live after
         # the plain-argument form kept building with 1.26.7 anyway.
-        buildGoModule = pkgs.buildGoModule.override { go = pkgs.go_1_27; };
+        #
+        # nixos-unstable still ships go 1.27.1, which can't build a module
+        # that requires 1.27.2, so bump the patch release here. Drop this
+        # override once the channel's go_1_27 reaches 1.27.2.
+        go = pkgs.go_1_27.overrideAttrs (old: rec {
+          version = "1.27.2";
+          src = pkgs.fetchurl {
+            url = "https://go.dev/dl/go${version}.src.tar.gz";
+            hash = "sha256-A0ldorpkiU1A9cSZLklFT6eLUGkGBP+Stq//UIG3bmI=";
+          };
+        });
+        buildGoModule = pkgs.buildGoModule.override { inherit go; };
       in
       {
         packages.default = buildGoModule {
