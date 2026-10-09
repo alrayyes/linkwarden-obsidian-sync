@@ -44,6 +44,10 @@ docker build -t linkwarden-obsidian-sync:local .
 hadolint reads the Dockerfile as text; the actual `docker build` is what
 proves it still works, which hadolint alone never checks.
 
+The `pre-commit` hook checks only what you staged (formatting, hadolint,
+markdown and prose style). The whole-tree checks, including the `go build`,
+`docker build` and `goreleaser check` above, run at `pre-push` and in CI.
+
 ## Getting set up
 
 - **Go**, version matching the `go` directive in `go.mod`.

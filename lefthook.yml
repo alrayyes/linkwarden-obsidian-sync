@@ -6,8 +6,10 @@
 # `golangci-lint` independently is a real failure mode, not a hypothetical
 # one. See rules/go.md and rules/go-lint.md for why.
 
-# pre-commit may write. Let the fixer run and restage what it touched — a
-# commit should not fail over a formatting nit a tool can settle by itself.
+# pre-commit judges only what the commit contains: every job takes
+# {staged_files} behind a glob. Fixers write only to staged files and restage
+# them. Builds, goreleaser check and anything whole-tree run at pre-push and
+# in CI instead.
 pre-commit:
   jobs:
     - name: gofmt
@@ -34,7 +36,9 @@ pre-commit:
 
     - name: markdownlint
       glob: "*.md"
-      run: bunx markdownlint-cli2 {staged_files}
+      # The config's globs would lint the whole tree; --no-globs keeps it to
+      # the staged list.
+      run: bunx markdownlint-cli2 --no-globs {staged_files}
 
     # Fast enough for a commit — Vale itself runs in well under a second.
     # LTeX is not (~300MB download, ~10s a run even cached), so mechanics
@@ -49,30 +53,6 @@ pre-commit:
         - "openspec/**"
         - ".github/PULL_REQUEST_TEMPLATE.md"
       run: vale {staged_files}
-
-    - name: goreleaser-check
-      glob: ".goreleaser.{yml,yaml}"
-      run: >-
-        docker run --rm --user "$(id -u):$(id -g)"
-        -v "$(pwd):/src" -w /src
-        goreleaser/goreleaser:v2.17.1 check
-
-    # Scoped to what the Dockerfile's COPY actually pulls in, so an
-    # unrelated commit skips this and stays fast; a Go or Dockerfile
-    # change pays for a warm-cache image build to prove it still builds —
-    # hadolint above reads the Dockerfile as text and never checks that.
-    - name: docker-build
-      glob: "{Dockerfile,**/*.go,go.mod,go.sum}"
-      run: >-
-        docker run --rm --user "$(id -u):$(id -g)"
-        -v "$(pwd):/src" -w /src
-        -e GOCACHE=/gocache -v "$HOME/.cache/go-build-docker:/gocache"
-        -e GOMODCACHE=/gomod -v "$HOME/.cache/go-mod-docker:/gomod"
-        -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64
-        golang:1.27.2-bookworm go build -o linkwarden-obsidian-sync ./cmd/linkwarden-obsidian-sync
-        && docker build -t linkwarden-obsidian-sync:pre-commit-check .
-        && rm -f linkwarden-obsidian-sync
-        && docker rmi linkwarden-obsidian-sync:pre-commit-check
 
 commit-msg:
   jobs:
