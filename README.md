@@ -34,7 +34,7 @@ reference, and the state file's shape.
 
 ```shell
 go build ./... && go vet ./... && go test ./... -race -cover
-go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for testing against a real

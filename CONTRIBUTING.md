@@ -32,8 +32,7 @@ Lint with golangci-lint, configured in `.golangci.yml`:
 golangci-lint run ./...
 ```
 
-CI runs the same checks, plus `govulncheck` for known CVEs in pinned
-dependencies, and separately lints and builds the `Dockerfile`:
+CI runs the same checks and separately lints and builds the `Dockerfile`:
 
 ```shell
 docker run --rm -i hadolint/hadolint:v2.15.1 < Dockerfile
@@ -47,6 +46,11 @@ proves it still works, which hadolint alone never checks.
 The `pre-commit` hook checks only what you staged (formatting, hadolint,
 markdown and prose style). The whole-tree checks, including the `go build`,
 `docker build` and `goreleaser check` above, run at `pre-push` and in CI.
+
+CI also audits dependencies with `govulncheck` and `bun audit`. Those jobs fail
+a pull request only for advisories it adds over its base. What is already on
+`main` is tracked by `advisory-scan.yml`, which keeps one open `Dependency
+advisories` issue and closes it when the audits are clean. Nothing is ignored.
 
 ## Getting set up
 
