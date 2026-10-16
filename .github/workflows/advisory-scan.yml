@@ -40,15 +40,33 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: package.json
-      # One ticket for both lockfiles: the audit passes only when both are clean. Pinned to a
-      # main commit of alrayyes/advisory-scan until its first release; re-pin then.
+      # One ticket for both lockfiles: the audit passes only when both are clean. Each tool's
+      # output is buffered. If any tool fails without naming an advisory (registry down), the
+      # step fails and prints no advisory IDs at all, so another tool's findings can't hide the
+      # error and the ticket is left as it is. advisory-scan#8 (multi-command support) will
+      # replace this wrapper.
+      # Pinned to a main commit of alrayyes/advisory-scan until its first release; re-pin then.
       - uses: alrayyes/advisory-scan@425418a63e80eb10142fbd2e82127b7ef3a51d68
         with:
           mode: scan
           command: |
             status=0
-            go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./... || status=1
-            bun audit || status=1
+            errored=0
+            report=
+            audit() {
+              out=$("$@" 2>&1) && rc=0 || rc=$?
+              report="${report}${out}"$'\n'
+              [ "${rc}" -eq 0 ] && return 0
+              status=1
+              printf '%s\n' "${out}" | grep -Eq 'GHSA-|CVE-|GO-[0-9]{4}-[0-9]+' || errored=1
+            }
+            audit go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+            audit bun audit
+            if [ "${errored}" -eq 1 ]; then
+              echo "an audit tool failed without naming an advisory; not reporting" >&2
+              exit 1
+            fi
+            printf '%s' "${report}"
             exit "${status}"
           timeout-seconds: 600
           labels: dependencies
