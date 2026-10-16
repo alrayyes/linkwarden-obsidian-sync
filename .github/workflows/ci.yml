@@ -71,7 +71,8 @@ jobs:
 
   # Works out whether a pull request touched what an audit reads. A skipped job reports
   # success, so branch protection can still require it; a `paths:` filter on the workflow
-  # would leave it pending forever. A push to main always audits.
+  # would leave it pending forever. A push to main always audits. If this job errors (say the
+  # base SHA is missing) the audits run anyway: failing open would hide an advisory.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -100,7 +101,7 @@ jobs:
   # What is already on main is the scan's to track, in advisory-scan.yml.
   govulncheck:
     needs: changes
-    if: needs.changes.outputs.go == 'true'
+    if: ${{ !cancelled() && (needs.changes.result == 'failure' || needs.changes.outputs.go == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -121,7 +122,7 @@ jobs:
   # versions, so a local run on a newer bun can report more than this does.
   bun-audit:
     needs: changes
-    if: needs.changes.outputs.bun == 'true'
+    if: ${{ !cancelled() && (needs.changes.result == 'failure' || needs.changes.outputs.bun == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
