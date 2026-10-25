@@ -45,7 +45,7 @@ jobs:
       # step fails and prints no advisory IDs at all, so another tool's findings can't hide the
       # error and the ticket is left as it is. advisory-scan#8 (multi-command support) will
       # replace this wrapper.
-      - uses: alrayyes/advisory-scan@9801551dad16ce63853b2babfda885365d368232 # v0.3.0
+      - uses: alrayyes/advisory-scan@c9f794de4354b870e159510f036779baf20f4a2f # v0.3.1
         with:
           mode: scan
           command: |
