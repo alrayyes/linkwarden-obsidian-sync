@@ -127,8 +127,8 @@ generates — keep the config file's permissions tight (`init` writes it
 `0600`) since it holds a secret in plain text, same as any env file would.
 
 Running the bare command with nothing configured yet — no config file, no
-`LINKWARDEN_URL`/`LINKWARDEN_TOKEN` — offers to write the template on the
-spot: answer yes, or pass `--yes` up front to skip asking. With no
+`LINKWARDEN_URL`/`LINKWARDEN_TOKEN` — offers to write the template right
+away: answer yes, or pass `--yes` up front to skip asking. With no
 terminal to ask on (a script, a systemd unit), it skips the prompt and
 fails with the same error `init` points you at, rather than hanging.
 
