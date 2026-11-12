@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.6](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.5...v2.6.6) (2026-11-12)
+
+
+### Bug Fixes
+
+* Bump golang.org/x/term from 0.46.0 to 0.47.0 in the gomod group ([#121](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/121)) ([7c746d9](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/7c746d9e207c3d68c1187c710fe36c0111aee8ee))
+
 ## [2.6.5](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.4...v2.6.5) (2026-10-09)
 
 
