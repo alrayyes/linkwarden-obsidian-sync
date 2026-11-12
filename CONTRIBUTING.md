@@ -93,6 +93,12 @@ The first `pre-push` (or `bun run lint:mechanics`) downloads
 cached under `$XDG_CACHE_HOME` afterwards. A run over this repo's docs
 takes about ten seconds once that's cached.
 
+The pre-push hook checks only the Markdown in your push, and every document when
+`.ltex.json` or `scripts/lint-mechanics.sh` changed. CI, and
+`bun run lint:mechanics` by hand, check every document.
+`scripts/test-lint-mechanics.sh` tests that behaviour with a fake
+`ltex-cli-plus`.
+
 This repo's own jargon — product names, tool names, words spell-checkers
 don't know — lives in two places, and a new term usually needs both:
 `styles/config/vocabularies/House/accept.txt` for Vale,

@@ -19,6 +19,8 @@ on:
       - .ltex.json
       - styles/**
       - .github/workflows/prose.yml
+      - scripts/lint-mechanics.sh
+      - scripts/test-lint-mechanics.sh
   pull_request:
     paths:
       - "**/*.md"
@@ -26,6 +28,8 @@ on:
       - .ltex.json
       - styles/**
       - .github/workflows/prose.yml
+      - scripts/lint-mechanics.sh
+      - scripts/test-lint-mechanics.sh
 
 permissions:
   contents: read
@@ -41,6 +45,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: The hook checks only the pushed Markdown
+        run: ./scripts/test-lint-mechanics.sh
 
       - name: Check the prose this repository owns
         # The same script the pre-push hook runs, so the two cannot
