@@ -9,9 +9,29 @@
 # broken. Per the standing CLAUDE.md exception ("merge one yourself once
 # every check is green, no separate ask"), there's no separate gate on
 # update-type layered on top of the green-check gate.
+#
+# RELEASE_TOKEN, not the default GITHUB_TOKEN: GitHub starts no workflows from
+# events a GITHUB_TOKEN causes, so a merge armed with it pushed to main
+# without running `ci` or release-please (#143). A merge armed with the PAT
+# does.
+#
+# pull_request_target, not pull_request: a pull_request run opened by
+# Dependabot reads the separate Dependabot secret store, which has no
+# RELEASE_TOKEN. pull_request_target runs in the base repo's context and reads
+# the ordinary Actions secret. It is safe here because this job checks out no
+# code and runs one gh command, and Dependabot's branches live on this repo,
+# never a fork.
 name: dependabot-auto-merge
 
-on: pull_request
+on: pull_request_target
+
+concurrency:
+  # A newer push re-runs this and arms the merge again (`gh pr merge --auto`
+  # is idempotent), so cancelling a superseded run can't lose a merge. Keyed on
+  # the pull request, because github.ref is the base branch for every one under
+  # pull_request_target.
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -19,10 +39,11 @@ permissions:
 
 jobs:
   auto-merge:
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
