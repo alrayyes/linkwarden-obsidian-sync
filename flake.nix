@@ -43,11 +43,10 @@
           pname = "linkwarden-obsidian-sync";
           inherit version;
           src = ./.;
-          # Regenerate whenever go.mod/go.sum change: nix build with this
-          # set to pkgs.lib.fakeHash, then substitute the hash Nix reports
-          # as "got". No command computes it standalone — it's derived
-          # from a real build attempt, same as goreleaser and the AUR
-          # PKGBUILD both need a real build to prove their own inputs.
+          # Derived from go.sum, so any go.mod/go.sum change invalidates it.
+          # CI refreshes it on Dependabot Go PRs (vendor-hash-update.yml);
+          # for any other change run scripts/update-vendor-hash.sh, which
+          # builds, reads the "got:" hash Nix reports, and writes it here.
           vendorHash = "sha256-g2vn7d6yNv3F50c/EhDRPBXh5XcmbZdbiDbQCNuuMG0=";
           subPackages = [ "cmd/linkwarden-obsidian-sync" ];
           # Matches goreleaser's own ldflags in .goreleaser.yaml, other

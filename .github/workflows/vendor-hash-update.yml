@@ -1,0 +1,91 @@
+# flake.nix pins a fixed-output vendorHash of the Go modules, so every
+# go.mod/go.sum change makes the nix-flake CI job fail on a hash mismatch,
+# and Dependabot can't edit Nix files (#137). This refreshes the hash on
+# Dependabot's own Go PRs and pushes it back to the branch.
+#
+# The standing exception to "no unattended tooling commits" this relies on is
+# deliberately narrow: Dependabot branches only, the one vendorHash line only,
+# nothing for any other author. A human's PR that drifts the hash stays red.
+#
+# pull_request_target, not pull_request: a Dependabot-triggered pull_request
+# run reads the separate Dependabot secret store, which has no RELEASE_TOKEN,
+# and GITHUB_TOKEN pushes don't start a new CI run. That makes checking out PR
+# code with a write token the classic pwn-request shape, so the guards below are load-bearing:
+#   - the actor is Dependabot and the branch lives on this repo, never a fork;
+#   - the build step runs with no secrets, the token only exists in the push
+#     step, after the only untrusted-code step is done;
+#   - checkout persists no credentials.
+name: vendor-hash-update
+
+on:
+  pull_request_target:
+    paths:
+      - go.mod
+      - go.sum
+
+concurrency:
+  group: vendor-hash-update-${{ github.event.pull_request.number }}
+  # The workflow's own push re-triggers it on the same PR; cancelling would
+  # drop the explanatory comment that follows the push.
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  LEFTHOOK: 0
+
+jobs:
+  update:
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # The exact head the event describes, not the branch name: a later push
+      # to the branch can't smuggle different content into this run, and the
+      # final push fails as non-fast-forward if Dependabot moved the branch.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      # The script that runs is the base branch's copy, never the PR's, so
+      # nothing from the PR head executes unsandboxed on this runner. The only
+      # PR code that runs is inside Nix's build sandbox.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+      - name: Refresh vendorHash
+        run: sh trusted/scripts/update-vendor-hash.sh
+      - name: Push the new hash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          if git diff --quiet -- flake.nix; then
+            echo "vendorHash already correct, nothing to push"
+            exit 0
+          fi
+          # No hooks: a commit made by automation must not run anything the
+          # checked-out tree could have planted.
+          git config core.hooksPath /dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix(nix): update vendorHash" -- flake.nix
+          # RELEASE_TOKEN, not GITHUB_TOKEN: a push made with GITHUB_TOKEN
+          # doesn't start a new CI run, so nix-flake would never re-check.
+          # Sent as a header through the environment, so neither the token nor
+          # its base64 form is in the URL or on argv. Masked in case a log
+          # echoes it, since Actions only masks the raw secret.
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth}"
+          GIT_CONFIG_COUNT=1 \
+            GIT_CONFIG_KEY_0="http.https://github.com/.extraheader" \
+            GIT_CONFIG_VALUE_0="Authorization: basic ${auth}" \
+            git push "https://github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"
+          gh pr comment "$PR_URL" --body "Pushed \`fix(nix): update vendorHash\`: go.mod/go.sum changed, so the Nix vendor hash needed refreshing (#137). CI re-runs on the new head. Dependabot won't rebase a branch with a commit it didn't make: if this goes stale or conflicts, comment \`@dependabot recreate\` and the hash is refreshed again."
