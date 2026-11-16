@@ -36,7 +36,8 @@ if [ "$count" -ne 1 ]; then
 fi
 new="$hashes"
 
-sed -i "s|^\( *vendorHash = \"\)sha256-[^\"]*\(\";\)|\1$new\2|" "$file"
+# Not `sed -i`: its flag differs between GNU and BSD sed.
+sed "s|^\( *vendorHash = \"\)sha256-[^\"]*\(\";\)|\1$new\2|" "$file" >"$log" && cat "$log" >"$file"
 if ! grep -q "vendorHash = \"$new\";" "$file"; then
   echo "could not rewrite vendorHash in $file" >&2
   exit 1

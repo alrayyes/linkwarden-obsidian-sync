@@ -9,8 +9,8 @@
 #
 # pull_request_target, not pull_request: a Dependabot-triggered pull_request
 # run reads the separate Dependabot secret store, which has no RELEASE_TOKEN,
-# and GITHUB_TOKEN pushes don't start a new CI run. That makes checking out PR code with a write token
-# the classic pwn-request shape, so the guards below are load-bearing:
+# and GITHUB_TOKEN pushes don't start a new CI run. That makes checking out PR
+# code with a write token the classic pwn-request shape, so the guards below are load-bearing:
 #   - the actor is Dependabot and the branch lives on this repo, never a fork;
 #   - the build step runs with no secrets, the token only exists in the push
 #     step, after the only untrusted-code step is done;
@@ -25,7 +25,9 @@ on:
 
 concurrency:
   group: vendor-hash-update-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  # The workflow's own push re-triggers it on the same PR; cancelling would
+  # drop the explanatory comment that follows the push.
+  cancel-in-progress: false
 
 permissions:
   contents: read

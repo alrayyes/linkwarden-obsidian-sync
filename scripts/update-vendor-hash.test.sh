@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Tests scripts/update-vendor-hash.sh against a stub `nix`, so no Nix install
-# is needed. Run by ci.yml's `changes` job by ci.yml's `test` job.
+# is needed. Run by ci.yml's `test` job.
 set -eu
 
 here="$(cd "$(dirname "$0")" && pwd)"
