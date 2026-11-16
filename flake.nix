@@ -47,7 +47,7 @@
           # CI refreshes it on Dependabot Go PRs (vendor-hash-update.yml);
           # for any other change run scripts/update-vendor-hash.sh, which
           # builds, reads the "got:" hash Nix reports, and writes it here.
-          vendorHash = "sha256-g2vn7d6yNv3F50c/EhDRPBXh5XcmbZdbiDbQCNuuMG0=";
+          vendorHash = "sha256-OLxgr1aLgjKHSti16QZHjU1cCrx4OKZrcawB7bqI2Oc=";
           subPackages = [ "cmd/linkwarden-obsidian-sync" ];
           # Matches goreleaser's own ldflags in .goreleaser.yaml, other
           # than the version source: goreleaser reads it off the tag,
