@@ -15,3 +15,6 @@ packaging/aur/*.pkg.tar.*
 /styles/Google/
 /styles/proselint/
 /styles/write-good/
+
+# Claude Code: generated OpenSpec skills/commands and session state.
+/.claude/
