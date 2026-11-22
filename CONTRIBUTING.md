@@ -65,7 +65,7 @@ advisories` issue and closes it when the audits are clean. Nothing is ignored.
   `golangci-lint` and `go test` at a pinned version rather than whatever the
   host toolchain happens to have, and to build/lint the `Dockerfile` itself.
 - **[Vale](https://vale.sh)**, installed separately (your package manager
-  probably has it, or `go install github.com/errata-ai/vale/v3/cmd/vale`) —
+  probably has it, or `go install github.com/vale-cli/vale/v3/cmd/vale`) —
   a standalone Go binary, not something `bunx` can resolve.
 
 One command installs the tooling and the git hooks:
