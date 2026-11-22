@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.8](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.7...v2.6.8) (2026-11-22)
+
+
+### Bug Fixes
+
+* **ci:** pin Vale style packages and drop proselint.CurlyQuotes ([#147](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/147)) ([aee5133](https://github.com/alrayyes/linkwarden-obsidian-sync/commit/aee5133390c08c4f13fc953462bc50e06834c47d)), closes [#146](https://github.com/alrayyes/linkwarden-obsidian-sync/issues/146)
+
 ## [2.6.7](https://github.com/alrayyes/linkwarden-obsidian-sync/compare/v2.6.6...v2.6.7) (2026-11-16)
 
 
